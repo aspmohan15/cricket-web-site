@@ -365,7 +365,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen min-w-0 w-full overflow-x-hidden">
         {/* Top Header Bar */}
         <TopBar
           currentSection={currentSection}
@@ -379,7 +379,7 @@ export default function App() {
         />
 
         {/* Viewport Content Canvas */}
-        <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-3 py-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
           {currentSection === 'dashboard' && (
             <DashboardView
               tournament={activeTournament}

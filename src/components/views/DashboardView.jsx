@@ -29,7 +29,6 @@ export const DashboardView = ({
 }) => {
   const completedMatches = matches.filter(m => m.status === 'completed');
   const liveMatches = matches.filter(m => m.status === 'live');
-  const scheduledMatches = matches.filter(m => m.status === 'scheduled');
   const totalExpenseSum = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalSponsorSum = sponsors.reduce((sum, s) => sum + s.contributionAmount, 0);
   const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
@@ -57,7 +56,7 @@ export const DashboardView = ({
     {
       label: 'Fixtures & Results',
       value: matches.length,
-      subtext: `${completedMatches.length} completed · ${liveMatches.length} live`,
+      subtext: `${completedMatches.length} done · ${liveMatches.length} live`,
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -93,14 +92,14 @@ export const DashboardView = ({
     {
       label: 'Registration Queue',
       value: pendingRegistrations.length,
-      subtext: tournament?.registrationOpen ? 'Registration Window: OPEN' : 'Registration Closed',
+      subtext: tournament?.registrationOpen ? 'Window: OPEN' : 'Window Closed',
       icon: UserPlus,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
       onClick: () => onNavigate('registrations')
     },
     {
-      label: 'Operating Net Delta',
+      label: 'Operating Delta',
       value: `₹${((totalSponsorSum - totalExpenseSum) / 100000).toFixed(2)}L`,
       subtext: 'Sponsorships less expenses',
       icon: TrendingUp,
@@ -111,32 +110,32 @@ export const DashboardView = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Tournament Headline Banner */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1">
             <span>Edition {tournament?.editionNumber || 1}</span>
             <span>·</span>
             <span>{tournament?.year || 2026} Season</span>
             <span>·</span>
-            <span className="font-mono">{tournament?.format || 'T20'} Format</span>
+            <span className="font-mono">{tournament?.format || 'T20'}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+          <h1 className="text-lg sm:text-2xl font-bold text-slate-900 leading-snug break-words">
             {tournament?.name}
           </h1>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 mt-2">
             <span className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-slate-400" />
-              {tournament?.venue}, {tournament?.city}
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span>{tournament?.venue}, {tournament?.city}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              {tournament?.startDate} to {tournament?.endDate}
+              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span>{tournament?.startDate} to {tournament?.endDate}</span>
             </span>
             <span className="flex items-center gap-1.5 font-medium">
               <span
-                className={`w-2 h-2 rounded-full ${
+                className={`w-2 h-2 rounded-full shrink-0 ${
                   tournament?.status === 'current'
                     ? 'bg-emerald-500'
                     : tournament?.status === 'upcoming'
@@ -149,22 +148,22 @@ export const DashboardView = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 shrink-0">
           <button
             onClick={() => onQuickAction('schedule_match')}
-            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+            className="flex-1 sm:flex-none min-h-[38px] px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer text-center"
           >
             Schedule Match
           </button>
           <button
             onClick={() => onQuickAction('record_expense')}
-            className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none min-h-[38px] px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer text-center"
           >
             Add Expense
           </button>
           <button
             onClick={() => onQuickAction('import_cricheroes')}
-            className="px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="w-full sm:w-auto min-h-[38px] px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer text-center"
           >
             Import CricHeroes
           </button>
@@ -172,26 +171,26 @@ export const DashboardView = ({
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((card, i) => {
           const Icon = card.icon;
           return (
             <div
               key={i}
               onClick={card.onClick}
-              className="bg-white rounded-xl border border-slate-200 p-4.5 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer group"
+              className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4.5 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">{card.label}</span>
-                <div className={`w-8 h-8 rounded-lg ${card.bgColor} ${card.color} flex items-center justify-center`}>
-                  <Icon className="w-4 h-4" />
+              <div className="flex items-start justify-between gap-1">
+                <span className="text-[11px] sm:text-xs font-medium text-slate-500 line-clamp-1">{card.label}</span>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${card.bgColor} ${card.color} flex items-center justify-center shrink-0`}>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
               </div>
-              <div className="mt-3">
-                <span className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+              <div className="mt-2.5 sm:mt-3">
+                <span className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight block">
                   {card.value}
                 </span>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">{card.subtext}</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">{card.subtext}</p>
               </div>
             </div>
           );
@@ -199,19 +198,20 @@ export const DashboardView = ({
       </div>
 
       {/* Two Column Layout: Fixtures & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
         {/* Upcoming Fixtures */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Upcoming & Recent Fixtures</h2>
-              <p className="text-xs text-slate-500">Live scoring and match schedule</p>
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden min-w-0">
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-slate-900 truncate">Upcoming & Recent Fixtures</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">Live scoring and match schedule</p>
             </div>
             <button
               onClick={() => onNavigate('fixtures_results')}
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer shrink-0"
             >
-              View All Fixtures <ArrowRight className="w-3.5 h-3.5" />
+              <span>View All</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -220,58 +220,59 @@ export const DashboardView = ({
               const teamA = teams.find(t => t.id === match.teamAId);
               const teamB = teams.find(t => t.id === match.teamBId);
               return (
-                <div key={match.id} className="p-4 hover:bg-slate-50/50 transition-colors">
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-                    <span className="font-semibold text-slate-700">Match #{match.matchNumber} · {match.round}</span>
-                    <span className="flex items-center gap-1.5 font-medium">
+                <div key={match.id} className="p-3.5 sm:p-4 hover:bg-slate-50/50 transition-colors min-w-0">
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2 gap-2">
+                    <span className="font-semibold text-slate-700 truncate">Match #{match.matchNumber} · {match.round}</span>
+                    <span className="flex items-center gap-1.5 font-medium shrink-0 text-[11px] sm:text-xs">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {match.date} · {match.time}
+                      {match.date}
                     </span>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    {/* Teams block: flexible wrap for mobile */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                       {/* Team A */}
-                      <div className="flex items-center gap-2 min-w-[130px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <div
-                          className="w-3 h-3 rounded-full shrink-0"
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                           style={{ backgroundColor: teamA?.primaryColor || '#0284c7' }}
                         />
-                        <span className="font-bold text-slate-900 text-sm">{teamA?.shortCode || 'TMA'}</span>
-                        <span className="text-xs text-slate-600 truncate">{teamA?.name}</span>
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm">{teamA?.shortCode || 'TMA'}</span>
+                        <span className="text-xs text-slate-600 truncate max-w-[100px] xs:max-w-[120px]">{teamA?.name}</span>
                         {match.teamAScore && (
-                          <span className="font-mono text-xs font-bold text-slate-900 ml-auto">{match.teamAScore}</span>
+                          <span className="font-mono text-xs font-bold text-slate-900 ml-1">{match.teamAScore}</span>
                         )}
                       </div>
 
-                      <span className="text-xs text-slate-400 font-bold">vs</span>
+                      <span className="text-[11px] text-slate-400 font-bold shrink-0">vs</span>
 
                       {/* Team B */}
-                      <div className="flex items-center gap-2 min-w-[130px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <div
-                          className="w-3 h-3 rounded-full shrink-0"
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                           style={{ backgroundColor: teamB?.primaryColor || '#dc2626' }}
                         />
-                        <span className="font-bold text-slate-900 text-sm">{teamB?.shortCode || 'TMB'}</span>
-                        <span className="text-xs text-slate-600 truncate">{teamB?.name}</span>
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm">{teamB?.shortCode || 'TMB'}</span>
+                        <span className="text-xs text-slate-600 truncate max-w-[100px] xs:max-w-[120px]">{teamB?.name}</span>
                         {match.teamBScore && (
-                          <span className="font-mono text-xs font-bold text-slate-900 ml-auto">{match.teamBScore}</span>
+                          <span className="font-mono text-xs font-bold text-slate-900 ml-1">{match.teamBScore}</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-left sm:text-right shrink-0">
                       {match.status === 'completed' ? (
-                        <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                        <span className="inline-block text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                           {match.resultSummary || 'Completed'}
                         </span>
                       ) : match.status === 'live' ? (
-                        <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded animate-pulse">
+                        <span className="inline-block text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded animate-pulse">
                           ● {match.resultSummary || 'Live Match'}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-500 font-medium">
-                          Venue: {match.venue?.split(',')[0]}
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {match.venue?.split(',')[0]}
                         </span>
                       )}
                     </div>
@@ -283,32 +284,32 @@ export const DashboardView = ({
         </div>
 
         {/* Administrative Audit Feed */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Recent Admin Activities</h2>
-              <p className="text-xs text-slate-500">Audit trail of tournament changes</p>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden min-w-0">
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-slate-900 truncate">Recent Activity</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">Audit log of system events</p>
             </div>
             <button
               onClick={() => onNavigate('import_history')}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer shrink-0"
             >
               Logs
             </button>
           </div>
 
-          <div className="p-4 space-y-3.5 max-h-[380px] overflow-y-auto">
+          <div className="p-3.5 sm:p-4 space-y-3 max-h-[360px] overflow-y-auto">
             {auditLogs.slice(0, 6).map(log => (
-              <div key={log.id} className="flex items-start gap-3 text-xs">
-                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5 text-slate-600">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+              <div key={log.id} className="flex items-start gap-2.5 text-xs">
+                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5 text-slate-600">
+                  <CheckCircle2 className="w-3 h-3" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-slate-800 leading-snug font-medium">
+                  <p className="text-slate-800 leading-snug font-medium break-words">
                     {log.details}
                   </p>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
-                    <span className="font-semibold text-slate-600">{log.userName}</span>
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">
+                    <span className="font-semibold text-slate-600 truncate max-w-[120px]">{log.userName}</span>
                     <span>·</span>
                     <span className="font-mono">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
@@ -320,32 +321,33 @@ export const DashboardView = ({
       </div>
 
       {/* Bottom Row: Recent Expenses & Registration Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
         {/* Latest Expenses */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Latest Tournament Expenses</h3>
-              <p className="text-xs text-slate-500">Recent operational disbursements</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0">
+          <div className="flex items-center justify-between mb-3.5 gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-slate-900 truncate">Latest Tournament Expenses</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">Recent disbursements</p>
             </div>
             <button
               onClick={() => onNavigate('expenses')}
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer shrink-0"
             >
-              View Ledger <ArrowRight className="w-3.5 h-3.5" />
+              <span>Ledger</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="space-y-2.5">
             {expenses.slice(0, 4).map(e => (
-              <div key={e.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs">
-                <div>
-                  <div className="font-semibold text-slate-800">{e.title}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
-                    {e.category} · {e.vendorName} · {e.date}
+              <div key={e.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs gap-2">
+                <div className="min-w-0 pr-1">
+                  <div className="font-semibold text-slate-800 truncate">{e.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                    {e.category} · {e.vendorName}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <div className="font-mono font-bold text-slate-900">₹{e.amount.toLocaleString()}</div>
                   <span className="text-[10px] text-emerald-700 font-medium capitalize">{e.paymentStatus}</span>
                 </div>
@@ -355,50 +357,51 @@ export const DashboardView = ({
         </div>
 
         {/* Registration Summary Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Player Registration Summary</h3>
-              <p className="text-xs text-slate-500">Applicant approvals & roster pipeline</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 min-w-0">
+          <div className="flex items-center justify-between mb-3.5 gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-slate-900 truncate">Player Registration Summary</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">Applicant approvals & roster pipeline</p>
             </div>
             <button
               onClick={() => onNavigate('registrations')}
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer shrink-0"
             >
-              Manage Queue <ArrowRight className="w-3.5 h-3.5" />
+              <span>Queue</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-            <div className="p-3 bg-emerald-50 rounded-lg">
-              <span className="text-lg font-bold font-mono text-emerald-700">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3.5 text-center">
+            <div className="p-2.5 sm:p-3 bg-emerald-50 rounded-lg">
+              <span className="text-base sm:text-lg font-bold font-mono text-emerald-700 block">
                 {registrations.filter(r => r.approvalStatus === 'approved').length}
               </span>
-              <span className="block text-[11px] font-medium text-emerald-800 mt-0.5">Approved</span>
+              <span className="block text-[10px] sm:text-[11px] font-medium text-emerald-800 mt-0.5 truncate">Approved</span>
             </div>
-            <div className="p-3 bg-amber-50 rounded-lg">
-              <span className="text-lg font-bold font-mono text-amber-700">
+            <div className="p-2.5 sm:p-3 bg-amber-50 rounded-lg">
+              <span className="text-base sm:text-lg font-bold font-mono text-amber-700 block">
                 {registrations.filter(r => r.approvalStatus === 'pending').length}
               </span>
-              <span className="block text-[11px] font-medium text-amber-800 mt-0.5">Pending Review</span>
+              <span className="block text-[10px] sm:text-[11px] font-medium text-amber-800 mt-0.5 truncate">Pending</span>
             </div>
-            <div className="p-3 bg-slate-100 rounded-lg">
-              <span className="text-lg font-bold font-mono text-slate-700">
+            <div className="p-2.5 sm:p-3 bg-slate-100 rounded-lg">
+              <span className="text-base sm:text-lg font-bold font-mono text-slate-700 block">
                 {registrations.filter(r => r.approvalStatus === 'waitlisted').length}
               </span>
-              <span className="block text-[11px] font-medium text-slate-700 mt-0.5">Waitlisted</span>
+              <span className="block text-[10px] sm:text-[11px] font-medium text-slate-700 mt-0.5 truncate">Waitlisted</span>
             </div>
           </div>
 
-          <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/70 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-emerald-600" />
-              <span className="text-slate-700">Registration Portal Status</span>
+          <div className="p-2.5 sm:p-3 rounded-lg border border-slate-200 bg-slate-50/70 flex items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="text-slate-700 truncate">Portal Status</span>
             </div>
-            <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+            <span className={`font-semibold px-2 py-0.5 rounded text-[11px] shrink-0 ${
               tournament?.registrationOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
             }`}>
-              {tournament?.registrationOpen ? 'Accepting Applications' : 'Submissions Closed'}
+              {tournament?.registrationOpen ? 'Open' : 'Closed'}
             </span>
           </div>
         </div>

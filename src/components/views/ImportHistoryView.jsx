@@ -99,30 +99,28 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
     } else {
       const playerRows = parsedPreview.map((row) => ({
         tournamentId: tournament.id,
-        name: row.PlayerName || 'Imported Player',
+        name: row.PlayerName || 'Unknown Player',
+        jerseyNumber: Math.floor(Math.random() * 99) + 1,
         role: row.Role || 'All-Rounder',
         battingStyle: row.BattingStyle || 'Right-hand bat',
         bowlingStyle: row.BowlingStyle || 'Right-arm medium',
-        basePrice: parseInt(row.BasePrice, 10) || 400000,
-        auctionStatus: 'available',
+        basePrice: parseInt(row.BasePrice, 10) || 500000,
+        soldPrice: 0,
+        teamId: undefined,
         isCaptain: false,
         isOverseas: false,
-        email: row.Email || 'imported@crickethq.local',
-        phone: row.Phone || '+91 90000 00000',
+        email: row.Email || `${(row.PlayerName || 'player').toLowerCase().replace(/\s+/g, '.')}@cricket.in`,
+        phone: row.Phone || '+91 98000 00000',
         city: row.City || tournament.city,
         shirtSize: row.ShirtSize || 'L',
         foodPreference: row.DietPreference || 'Veg',
-        registrationStatus: 'approved',
-        paymentStatus: 'paid',
-        matchesPlayed: 0,
         runsScored: 0,
-        highestScore: 0,
         wicketsTaken: 0,
-        bestBowling: '-',
-        strikeRate: 0,
-        economyRate: 0
+        matchesPlayed: 0,
+        auctionStatus: 'available',
+        photoUrl: ''
       }));
-      onImportPlayers(playerRows, fileName || 'players_roster.csv');
+      onImportPlayers(playerRows, fileName || 'player_roster_import.csv');
     }
 
     setModalOpen(false);
@@ -131,9 +129,9 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Spreadsheet & CricHeroes Import Engine</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -146,15 +144,15 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
             setModalOpen(true);
             handleLoadSample();
           }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer w-full sm:w-auto"
         >
           <Upload className="w-4 h-4" />
-          Launch Import Wizard
+          <span>Launch Import Wizard</span>
         </button>
       </div>
 
       {/* CricHeroes Protocol Notice */}
-      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 flex items-start gap-3">
+      <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5 sm:p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
         <div className="text-xs text-purple-900 leading-relaxed">
           <span className="font-bold">CricHeroes Authorized Exporter Protocol:</span> Since CricHeroes does not provide a public REST API for direct database sync, export your match scorecards or tournament summary sheets into CSV format from the CricHeroes official tournament portal and load them through this validator.
@@ -163,17 +161,61 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
 
       {/* Historical Import Jobs Ledger */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Import History & Audit Log</h3>
-            <p className="text-xs text-slate-500">Record of executed batch import jobs for {tournament.name}</p>
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 truncate">Import History & Audit Log</h3>
+            <p className="text-[11px] sm:text-xs text-slate-500 truncate">Record of executed batch import jobs for {tournament.name}</p>
           </div>
-          <span className="text-xs font-mono font-semibold text-slate-500">
-            {importJobs.length} jobs completed
+          <span className="text-xs font-mono font-semibold text-slate-500 shrink-0">
+            {importJobs.length} jobs
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Jobs Card View (Mobile < 768px) */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {importJobs.map(job => (
+            <div key={job.id} className="p-3.5 space-y-2 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="font-mono font-bold text-slate-900 text-xs block">
+                    {job.jobType.replace('_', ' ').toUpperCase()}
+                  </span>
+                  <span className="font-mono text-slate-600 text-[11px] truncate block mt-0.5">
+                    {job.fileName}
+                  </span>
+                </div>
+
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded capitalize shrink-0">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  {job.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                <div>
+                  <span className="text-slate-400 block">Rows Processed</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {job.importedRows} / {job.totalRows}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Imported By</span>
+                  <span className="font-medium text-slate-700 truncate block">{job.importedBy}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-50">
+                <span className="truncate max-w-[200px]">{job.importSummary}</span>
+                <span className="font-mono shrink-0">
+                  {new Date(job.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Jobs Table (md+) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
@@ -239,7 +281,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
       >
         <div className="space-y-4 text-xs">
           {/* Segmented type selector */}
-          <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-stretch gap-1.5 p-1 bg-slate-100 rounded-lg">
             <button
               onClick={() => {
                 setActiveImportType('cricheroes');
@@ -247,7 +289,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
                 setFileName('cricheroes_verified_match_export.csv');
                 handleParseContent(sampleCricHeroesCsv);
               }}
-              className={`flex-1 py-1.5 px-3 rounded-md font-semibold transition-colors cursor-pointer ${
+              className={`flex-1 py-2 px-3 rounded-md font-semibold transition-colors cursor-pointer text-center text-xs ${
                 activeImportType === 'cricheroes'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -262,7 +304,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
                 setFileName('state_roster_approved_players.csv');
                 handleParseContent(samplePlayerCsv);
               }}
-              className={`flex-1 py-1.5 px-3 rounded-md font-semibold transition-colors cursor-pointer ${
+              className={`flex-1 py-2 px-3 rounded-md font-semibold transition-colors cursor-pointer text-center text-xs ${
                 activeImportType === 'players'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -273,7 +315,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
               <label className="font-semibold text-slate-700">Select File or Edit Raw CSV</label>
               <button
                 type="button"
@@ -307,33 +349,33 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
           {/* Validation Checks */}
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
             <span className="font-bold text-slate-900 block mb-1">Pre-flight Import Diagnostics:</span>
-            <div className="flex flex-wrap items-center gap-4 text-slate-600 text-[11px]">
+            <div className="flex flex-wrap items-center gap-3 text-slate-600 text-[11px]">
               <span className="flex items-center gap-1 font-semibold text-emerald-700">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {parsedPreview ? parsedPreview.length : 0} rows recognized
               </span>
               <span className="flex items-center gap-1 text-slate-500">
-                0 duplicate match IDs detected
+                0 duplicates
               </span>
-              <span className="flex items-center gap-1 text-slate-500">
-                Target Partition: {tournament.id}
+              <span className="flex items-center gap-1 text-slate-500 font-mono">
+                Partition: {tournament.id}
               </span>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
+              className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
             >
               Cancel
             </button>
             <button
-              type="button"
+              type="submit"
               onClick={handleExecuteImport}
               disabled={!parsedPreview || parsedPreview.length === 0}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold shadow-xs cursor-pointer"
+              className="min-h-[38px] px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold shadow-xs cursor-pointer"
             >
               Confirm Import ({parsedPreview ? parsedPreview.length : 0} Records)
             </button>

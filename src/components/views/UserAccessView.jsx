@@ -62,12 +62,12 @@ export const UserAccessView = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {USER_ROLES.map(r => (
             <button
               key={r}
               onClick={() => onSwitchRole(r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
                 currentUser.role === r
                   ? 'bg-emerald-500 text-slate-950 font-bold shadow-md'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -81,46 +81,46 @@ export const UserAccessView = ({
 
       {/* Admin Personnel Directory */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-900">Authorized Admin Personnel</h3>
-          <span className="text-xs font-mono text-slate-500">{users.length} accounts</span>
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-slate-900 truncate">Authorized Admin Personnel</h3>
+          <span className="text-xs font-mono text-slate-500 shrink-0">{users.length} accounts</span>
         </div>
 
         <div className="divide-y divide-slate-100 text-xs">
           {users.map(u => {
             const isCurrentUser = u.id === currentUser.id;
             return (
-              <div key={u.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+              <div key={u.id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50 transition-colors gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
                     {u.name.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <div>
-                    <div className="font-bold text-slate-900 flex items-center gap-2">
-                      {u.name}
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 flex items-center gap-2 truncate">
+                      <span className="truncate">{u.name}</span>
                       {isCurrentUser && (
-                        <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-semibold">
-                          Active User
+                        <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-semibold shrink-0">
+                          Active
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-400">{u.email}</div>
+                    <div className="text-[11px] text-slate-400 truncate">{u.email}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                  <div className="text-left sm:text-right">
                     <span className="font-semibold text-slate-800 block capitalize">
                       {u.role.replace('_', ' ')}
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      Partition: {u.assignedTournaments.includes('*') ? 'All Editions' : 'Scoped'}
+                    <span className="text-[10px] text-slate-400 block">
+                      {u.assignedTournaments.includes('*') ? 'All Editions' : 'Scoped Partition'}
                     </span>
                   </div>
 
                   <button
                     onClick={() => onSwitchRole(u.role)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-700 transition-colors text-[11px] cursor-pointer"
+                    className="px-3 py-1.5 min-h-[34px] rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-700 transition-colors text-xs cursor-pointer shrink-0"
                   >
                     Assume Role
                   </button>
@@ -133,13 +133,18 @@ export const UserAccessView = ({
 
       {/* Permissions Matrix */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900">Operational Privileges Matrix</h3>
-          <p className="text-xs text-slate-500">Fine-grained capabilities by authority tier</p>
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Operational Privileges Matrix</h3>
+            <p className="text-xs text-slate-500">
+              Fine-grained capabilities by authority tier
+              <span className="sm:hidden text-emerald-600 font-medium"> · Scroll table horizontally →</span>
+            </p>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[480px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Administrative Capability</th>

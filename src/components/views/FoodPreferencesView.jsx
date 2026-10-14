@@ -89,9 +89,9 @@ export const FoodPreferencesView = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Player Food & Dietary Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -99,13 +99,13 @@ export const FoodPreferencesView = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           <button
             onClick={handleExportCateringSheet}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Export Catering Sheet (CSV)
+            <span>Export Sheet</span>
           </button>
           <button
             onClick={() => {
@@ -121,37 +121,40 @@ export const FoodPreferencesView = ({
               });
               setCreateModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Log Meal Order
+            <span>Log Meal Order</span>
           </button>
         </div>
       </div>
 
       {/* Dietary Census Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
         {FOOD_PREFERENCES.map(diet => (
-          <div key={diet} className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs text-center">
-            <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">
+          <div
+            key={diet}
+            className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs text-center last:col-span-2 sm:last:col-span-1"
+          >
+            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 block uppercase tracking-wider truncate">
               {diet}
             </span>
-            <span className="text-2xl font-bold font-mono text-slate-900 mt-1 block">
+            <span className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1 block">
               {dietStats[diet] || 0}
             </span>
-            <span className="text-[10px] text-slate-400">Rostered Athletes</span>
+            <span className="text-[10px] text-slate-400">Athletes</span>
           </div>
         ))}
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
           {/* Team Filter */}
           <select
             value={teamFilter}
             onChange={e => setTeamFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
           >
             <option value="all">All Teams</option>
             {teams.map(t => (
@@ -163,7 +166,7 @@ export const FoodPreferencesView = ({
           <select
             value={mealFilter}
             onChange={e => setMealFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
           >
             <option value="all">All Meals</option>
             {MEAL_TYPES.map(m => (
@@ -175,28 +178,102 @@ export const FoodPreferencesView = ({
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
           >
             <option value="all">All Statuses</option>
             {MEAL_STATUSES.map(s => (
-              <option key={s} value={s} className="capitalize">{s}</option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
-
-        <div className="text-slate-500 font-medium">
-          Showing {filteredOrders.length} meal distribution records
-        </div>
       </div>
 
-      {/* Meal Distribution Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+      {/* Mobile Meal Order Cards (Mobile < 768px) */}
+      <div className="md:hidden space-y-3">
+        {filteredOrders.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+            No meal orders match this filter.
+          </div>
+        ) : (
+          filteredOrders.map(order => {
+            const team = teams.find(t => t.id === order.teamId);
+            const player = players.find(p => p.id === order.playerId);
+
+            return (
+              <div
+                key={order.id}
+                className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 pr-1">
+                    <div className="font-bold text-slate-900 text-sm truncate">{player?.name || 'Staff Member'}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 truncate">{team?.name || 'Tournament Official'}</div>
+                  </div>
+
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize shrink-0 ${
+                      order.status === 'served'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : order.status === 'confirmed'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Meal Type</span>
+                    <span className="font-semibold text-slate-800">{order.mealType}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Diet Choice</span>
+                    <span className="text-slate-700 font-medium">{order.foodChoice} ({order.quantity} portion)</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Instructions</span>
+                    <span className="text-slate-600 truncate block">{order.specialInstructions || 'Standard sports buffet'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                  <span className="text-[11px] text-slate-400 font-mono">{order.date}</span>
+
+                  <div className="flex items-center gap-1.5">
+                    {order.status !== 'served' && (
+                      <button
+                        onClick={() => onUpdateOrderStatus(order.id, 'served')}
+                        className="px-3 py-1.5 min-h-[34px] rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        Mark Served
+                      </button>
+                    )}
+                    {order.status === 'requested' && (
+                      <button
+                        onClick={() => onUpdateOrderStatus(order.id, 'confirmed')}
+                        className="px-3 py-1.5 min-h-[34px] rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Confirm
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Meal Orders Table (md+) */}
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4">Player & Team</th>
-                <th className="py-3 px-4">Meal Type</th>
+                <th className="py-3 px-4">Beneficiary Athlete</th>
+                <th className="py-3 px-4">Meal Window</th>
                 <th className="py-3 px-4">Diet Choice</th>
                 <th className="py-3 px-4">Date & Qty</th>
                 <th className="py-3 px-4">Special Instructions</th>
@@ -269,7 +346,7 @@ export const FoodPreferencesView = ({
                           {order.status === 'requested' && (
                             <button
                               onClick={() => onUpdateOrderStatus(order.id, 'confirmed')}
-                              className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
                             >
                               Confirm
                             </button>
@@ -293,7 +370,7 @@ export const FoodPreferencesView = ({
         subtitle={`Match day catering reservation for ${tournament.name}`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Franchise Team</label>
               <select
@@ -340,47 +417,44 @@ export const FoodPreferencesView = ({
               <select
                 value={form.mealType}
                 onChange={e => setForm({ ...form, mealType: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
-                <option value="Breakfast">Breakfast (07:00 - 10:00)</option>
-                <option value="Lunch">Lunch (12:30 - 15:00)</option>
-                <option value="High Tea">High Tea (16:30 - 18:00)</option>
-                <option value="Dinner">Dinner (20:00 - 23:00)</option>
+                {MEAL_TYPES.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Dietary Requirement</label>
+              <label className="block font-semibold text-slate-700 mb-1">Dietary Category</label>
               <select
                 value={form.foodChoice}
                 onChange={e => setForm({ ...form, foodChoice: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
-                <option value="Veg">Vegetarian</option>
-                <option value="Non-Veg">Non-Vegetarian</option>
-                <option value="Jain">Jain (Strict)</option>
-                <option value="Vegan">Vegan</option>
-                <option value="Halal">Halal</option>
+                {FOOD_PREFERENCES.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Date</label>
+              <label className="block font-semibold text-slate-700 mb-1">Service Date</label>
               <input
                 type="date"
                 required
                 value={form.date}
                 onChange={e => setForm({ ...form, date: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Quantity</label>
+              <label className="block font-semibold text-slate-700 mb-1">Portion Quantity</label>
               <input
                 type="number"
                 min={1}
-                max={20}
+                max={50}
                 required
                 value={form.quantity}
                 onChange={e => setForm({ ...form, quantity: parseInt(e.target.value, 10) || 1 })}
@@ -388,11 +462,11 @@ export const FoodPreferencesView = ({
               />
             </div>
 
-            <div className="col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Special Dietary Notes</label>
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Special Dietary Instructions</label>
               <input
                 type="text"
-                placeholder="e.g. Nut allergy, gluten free oats"
+                placeholder="e.g. Gluten-free bread, no onion/garlic, hydration electrolytes"
                 value={form.specialInstructions}
                 onChange={e => setForm({ ...form, specialInstructions: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -400,17 +474,17 @@ export const FoodPreferencesView = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setCreateModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
+              className="min-h-[40px] px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
+              className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
             >
               Save Meal Order
             </button>

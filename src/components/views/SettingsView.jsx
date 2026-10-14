@@ -76,40 +76,42 @@ export const SettingsView = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 sm:flex items-center gap-2 w-full sm:w-auto">
           <button
+            type="button"
             onClick={handleExportDatabaseJson}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Export DB Snapshot
+            <span>Export DB Snapshot</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               if (confirm('Reset entire tournament database to default official sample data? All local changes will be refreshed.')) {
                 onResetDatabase();
                 onShowToast('Database reset to official sample state!', 'info');
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Sample Data
+            <span>Reset Sample Data</span>
           </button>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Supabase PostgreSQL Configuration */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
                 <Database className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Supabase Hosted PostgreSQL & Auth</h3>
-                <p className="text-xs text-slate-500">Prisma database provider & Row Level Security connection</p>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-900 truncate">Supabase Hosted PostgreSQL & Auth</h3>
+                <p className="text-xs text-slate-500 truncate">Prisma database provider & Row Level Security connection</p>
               </div>
             </div>
 
@@ -117,7 +119,7 @@ export const SettingsView = ({
               type="button"
               onClick={handleTestSupabase}
               disabled={testingSupabase}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 text-xs cursor-pointer"
+              className="flex items-center justify-center gap-1 px-3 py-2 min-h-[36px] rounded-lg border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 text-xs cursor-pointer w-full sm:w-auto"
             >
               {testingSupabase ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
               <span>Test Connection</span>
@@ -148,15 +150,15 @@ export const SettingsView = ({
         </div>
 
         {/* Cloudinary Digital Media Storage */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center font-bold shrink-0">
                 <Cloud className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Cloudinary CDN Media Repository</h3>
-                <p className="text-xs text-slate-500">Unsigned & authenticated image/video asset pipeline</p>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-900 truncate">Cloudinary CDN Media Repository</h3>
+                <p className="text-xs text-slate-500 truncate">Unsigned & authenticated image/video asset pipeline</p>
               </div>
             </div>
 
@@ -164,7 +166,7 @@ export const SettingsView = ({
               type="button"
               onClick={handleTestCloudinary}
               disabled={testingCloudinary}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 text-xs cursor-pointer"
+              className="flex items-center justify-center gap-1 px-3 py-2 min-h-[36px] rounded-lg border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 text-xs cursor-pointer w-full sm:w-auto"
             >
               {testingCloudinary ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" />}
               <span>Verify Preset</span>
@@ -235,7 +237,7 @@ export const SettingsView = ({
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 min-h-[42px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center text-center"
           >
             Save All Settings
           </button>

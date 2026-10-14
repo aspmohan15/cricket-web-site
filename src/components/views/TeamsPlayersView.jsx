@@ -162,7 +162,7 @@ export const TeamsPlayersView = ({
   return (
     <div className="space-y-6">
       {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Franchise Teams & Player Squads</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -170,20 +170,20 @@ export const TeamsPlayersView = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           <button
             onClick={onOpenImport}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
-            Import Spreadsheet
+            <span>Import CSV</span>
           </button>
           <button
             onClick={handleExportRoster}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Export Roster
+            <span>Export Roster</span>
           </button>
           <button
             onClick={() => {
@@ -198,10 +198,10 @@ export const TeamsPlayersView = ({
               });
               setCreateTeamModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Team
+            <span>Add Team</span>
           </button>
           <button
             onClick={() => {
@@ -225,35 +225,35 @@ export const TeamsPlayersView = ({
               });
               setCreatePlayerModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Player
+            <span>Add Player</span>
           </button>
         </div>
       </div>
 
       {/* Segmented View Control */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-200 pb-3">
         <button
           onClick={() => setActiveTab('squads')}
-          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+          className={`px-3.5 py-2 min-h-[38px] text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center ${
             activeTab === 'squads'
               ? 'bg-slate-900 text-white'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
-          Franchise Squad Boards ({teams.length} Teams)
+          Franchise Squad Boards ({teams.length})
         </button>
         <button
           onClick={() => setActiveTab('players')}
-          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+          className={`px-3.5 py-2 min-h-[38px] text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center ${
             activeTab === 'players'
               ? 'bg-slate-900 text-white'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
-          Master Players Directory ({players.length} Players)
+          Master Players Directory ({players.length})
         </button>
       </div>
 
@@ -439,8 +439,113 @@ export const TeamsPlayersView = ({
             </div>
           </div>
 
-          {/* Players Table */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          {/* Mobile Players Cards (Mobile < 768px) */}
+          <div className="md:hidden space-y-3">
+            {filteredPlayers.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+                No players found matching current search/filter.
+              </div>
+            ) : (
+              filteredPlayers.map(player => {
+                const assignedTeam = teams.find(t => t.id === player.teamId);
+
+                return (
+                  <div
+                    key={player.id}
+                    className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs shrink-0">
+                          {player.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 text-sm truncate flex items-center gap-1.5">
+                            <span className="truncate">{player.name}</span>
+                            {player.isCaptain && (
+                              <span className="text-[10px] bg-amber-500 text-white font-bold px-1 rounded shrink-0">
+                                C
+                              </span>
+                            )}
+                            {player.isOverseas && (
+                              <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-1 rounded shrink-0">
+                                OS
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            #{player.jerseyNumber || '—'} · {player.role} · {player.city}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setEditingPlayer(player)}
+                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center cursor-pointer"
+                          aria-label="Edit Player"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Remove player ${player.name}?`)) {
+                              onDeletePlayer(player.id);
+                            }
+                          }}
+                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center cursor-pointer"
+                          aria-label="Delete Player"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Team</span>
+                        {assignedTeam ? (
+                          <div className="flex items-center gap-1 font-semibold text-slate-800 truncate">
+                            <div
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: assignedTeam.primaryColor }}
+                            />
+                            <span className="truncate">{assignedTeam.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-500">Unassigned Pool</span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Auction Price</span>
+                        <div className="font-mono text-slate-800 font-bold">
+                          {player.soldPrice ? (
+                            <span className="text-emerald-700">₹{(player.soldPrice / 100000).toFixed(1)}L Sold</span>
+                          ) : (
+                            <span>₹{(player.basePrice / 100000).toFixed(1)}L Base</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Style</span>
+                        <span className="text-slate-600 truncate block">{player.battingStyle}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Diet & Kit</span>
+                        <span className="text-slate-600 font-medium block">{player.foodPreference} · Size {player.shirtSize}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Players Table (md+) */}
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>

@@ -58,7 +58,7 @@ export const SponsorshipView = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Sponsorship Partnerships</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -66,10 +66,10 @@ export const SponsorshipView = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
-            <span className="text-emerald-700 font-medium">Total Sponsorship Raised: </span>
-            <span className="font-bold font-mono text-emerald-900">₹{(totalCommitted / 100000).toFixed(1)} Lakhs</span>
+        <div className="flex flex-col xs:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
+          <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-center">
+            <span className="text-emerald-700 font-medium">Raised: </span>
+            <span className="font-bold font-mono text-emerald-900">₹{(totalCommitted / 100000).toFixed(1)}L</span>
           </div>
           <button
             onClick={() => {
@@ -86,10 +86,10 @@ export const SponsorshipView = ({
               });
               setCreateModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Add Sponsor
+            <span>Add Sponsor</span>
           </button>
         </div>
       </div>

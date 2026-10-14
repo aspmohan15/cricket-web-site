@@ -171,13 +171,13 @@ export const AuctionView = ({
             </div>
 
             {/* Current Bid Display */}
-            <div className="mt-6 p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mt-6 p-3.5 sm:p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-xs text-slate-400 block font-medium">
+                <span className="text-[11px] sm:text-xs text-slate-400 block font-medium">
                   Leading Bid & Franchise
                 </span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-3xl font-extrabold font-mono text-emerald-400">
+                <div className="flex flex-wrap items-baseline gap-2 mt-1">
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-400">
                     ₹{currentBid.toLocaleString()}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
@@ -187,8 +187,8 @@ export const AuctionView = ({
                 <div className="text-xs text-slate-300 font-semibold mt-1">
                   {leadingTeam ? (
                     <span className="flex items-center gap-1.5 text-emerald-400">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Held by {leadingTeam.name} ({leadingTeam.shortCode})
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Held by {leadingTeam.name} ({leadingTeam.shortCode})</span>
                     </span>
                   ) : (
                     <span className="text-slate-400">Starting at Base Price</span>
@@ -197,18 +197,18 @@ export const AuctionView = ({
               </div>
 
               {/* Hammer Controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleHammerSold}
                   disabled={!leadingTeam}
-                  className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-none px-4 py-2.5 min-h-[42px] rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Gavel className="w-4 h-4" />
-                  Hammer Sold
+                  <Gavel className="w-4 h-4 shrink-0" />
+                  <span>Hammer Sold</span>
                 </button>
                 <button
                   onClick={handleMarkPassUnsold}
-                  className="px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-600 transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-none px-3.5 py-2.5 min-h-[42px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-600 transition-colors cursor-pointer flex items-center justify-center text-center"
                 >
                   Pass Unsold
                 </button>
@@ -225,7 +225,7 @@ export const AuctionView = ({
                 }`}
               >
                 {bidStatusMessage.error ? <AlertTriangle className="w-4 h-4 shrink-0" /> : <Sparkles className="w-4 h-4 shrink-0" />}
-                <span>{bidStatusMessage.text}</span>
+                <span className="break-words">{bidStatusMessage.text}</span>
               </div>
             )}
 
@@ -249,33 +249,33 @@ export const AuctionView = ({
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0 pr-1">
                           <div
-                            className="w-2.5 h-2.5 rounded-full"
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{ backgroundColor: team.primaryColor }}
                           />
                           <span className="font-bold text-slate-200 truncate">{team.shortCode}</span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          ₹{(team.budgetRemaining / 100000).toFixed(1)}L left
+                        <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                          ₹{(team.budgetRemaining / 100000).toFixed(1)}L
                         </span>
                       </div>
 
                       {cannotAfford ? (
-                        <div className="text-[10px] text-rose-400 font-semibold py-1 text-center bg-rose-950/30 rounded">
+                        <div className="text-[10px] text-rose-400 font-semibold py-1.5 text-center bg-rose-950/30 rounded">
                           Budget Depleted
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-1.5">
                           <button
                             onClick={() => handleBidClick(team, 50000)}
-                            className="py-1 px-2 rounded bg-slate-700 hover:bg-slate-600 text-white font-mono text-[11px] font-semibold transition-colors cursor-pointer"
+                            className="py-1.5 px-2 min-h-[36px] rounded bg-slate-700 hover:bg-slate-600 text-white font-mono text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
                           >
                             +50k
                           </button>
                           <button
                             onClick={() => handleBidClick(team, 100000)}
-                            className="py-1 px-2 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-[11px] font-semibold transition-colors cursor-pointer"
+                            className="py-1.5 px-2 min-h-[36px] rounded bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
                           >
                             +100k
                           </button>
@@ -289,14 +289,14 @@ export const AuctionView = ({
           </div>
 
           {/* Auction Transaction History Feed */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Bid Transaction Ledger</h3>
-                <p className="text-xs text-slate-500">Real-time audit log of all auction bids</p>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-900 truncate">Bid Transaction Ledger</h3>
+                <p className="text-[11px] sm:text-xs text-slate-500 truncate">Real-time audit log of all auction bids</p>
               </div>
-              <span className="text-xs font-mono font-semibold text-slate-500">
-                {auctionBids.length} bids recorded
+              <span className="text-xs font-mono font-semibold text-slate-500 shrink-0">
+                {auctionBids.length} bids
               </span>
             </div>
 
@@ -307,18 +307,18 @@ export const AuctionView = ({
                 return (
                   <div
                     key={bid.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs gap-1.5"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <div
-                        className="w-2 h-2 rounded-full"
+                        className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: team?.primaryColor || '#0284c7' }}
                       />
-                      <span className="font-bold text-slate-900">{team?.name}</span>
+                      <span className="font-bold text-slate-900 truncate max-w-[120px]">{team?.name}</span>
                       <span className="text-slate-400">bid on</span>
-                      <span className="font-semibold text-slate-700">{player?.name}</span>
+                      <span className="font-semibold text-slate-700 truncate max-w-[120px]">{player?.name}</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 text-right">
                       <span className="font-mono font-bold text-emerald-700">
                         ₹{bid.amount.toLocaleString()}
                       </span>

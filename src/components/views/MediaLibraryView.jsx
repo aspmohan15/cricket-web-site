@@ -93,9 +93,9 @@ export const MediaLibraryView = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Media Library & Cloudinary Assets</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -115,10 +115,10 @@ export const MediaLibraryView = ({
             });
             setUploadModalOpen(true);
           }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer w-full sm:w-auto"
         >
           <CloudUpload className="w-4 h-4" />
-          Upload Asset
+          <span>Upload Asset</span>
         </button>
       </div>
 

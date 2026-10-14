@@ -35,9 +35,9 @@ export const StandingsView = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Points Table & Net Run Rate (NRR)</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -47,15 +47,103 @@ export const StandingsView = ({
 
         <button
           onClick={handleExportStandings}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer w-full sm:w-auto"
         >
           <Download className="w-3.5 h-3.5" />
-          Export Points Table (CSV)
+          <span>Export Points Table (CSV)</span>
         </button>
       </div>
 
-      {/* Standings Table Card */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+      {/* Mobile Standings Cards (Mobile < 768px) */}
+      <div className="md:hidden space-y-3">
+        {standings.map((row, idx) => {
+          const team = teams.find(t => t.id === row.teamId);
+          const isTop4 = idx < 4;
+
+          return (
+            <div
+              key={row.teamId}
+              className={`bg-white rounded-xl border p-3.5 shadow-xs space-y-2.5 ${
+                isTop4 ? 'border-emerald-300 bg-emerald-50/10' : 'border-slate-200'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 font-mono ${
+                      isTop4 ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    #{idx + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: team?.primaryColor || '#0284c7' }}
+                      />
+                      <span className="font-bold text-slate-900 text-sm truncate">{team?.name || row.teamId}</span>
+                      <span className="text-[11px] text-slate-400 font-mono">({team?.shortCode})</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-base font-mono font-extrabold text-slate-900 px-2 py-0.5 bg-slate-100 rounded">
+                    {row.points} Pts
+                  </span>
+                </div>
+              </div>
+
+              {/* Match Stats Grid */}
+              <div className="grid grid-cols-4 gap-1.5 text-center bg-slate-50 p-2 rounded-lg text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-sans uppercase">P</span>
+                  <span className="font-bold text-slate-800">{row.matchesPlayed}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-emerald-600 block font-sans uppercase">W</span>
+                  <span className="font-bold text-emerald-700">{row.won}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-rose-500 block font-sans uppercase">L</span>
+                  <span className="font-bold text-rose-700">{row.lost}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-sans uppercase">NRR</span>
+                  <span
+                    className={`font-bold ${
+                      row.netRunRate > 0
+                        ? 'text-emerald-700'
+                        : row.netRunRate < 0
+                        ? 'text-rose-700'
+                        : 'text-slate-600'
+                    }`}
+                  >
+                    {row.netRunRate > 0 ? `+${row.netRunRate.toFixed(2)}` : row.netRunRate.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100 font-sans">
+                <span className="text-slate-400">
+                  Runs: {row.runsScored}/{row.oversFaced}ov · Conceded: {row.runsConceded}/{row.oversBowled}ov
+                </span>
+                {isTop4 ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded shrink-0">
+                    Playoffs <ArrowUpRight className="w-2.5 h-2.5" />
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-medium shrink-0">Eliminated</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Standings Table Card (md+) */}
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>

@@ -116,8 +116,8 @@ export const FixturesResultsView = ({
       </div>
 
       {/* Status Segment Filter */}
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-slate-500 font-medium mr-1">Filter Fixtures:</span>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+        <span className="text-slate-500 font-medium mr-1 text-[11px] sm:text-xs">Filter Fixtures:</span>
         {[
           { id: 'all', label: `All (${matches.length})` },
           { id: 'live', label: `Live (${matches.filter(m => m.status === 'live').length})` },
@@ -127,7 +127,7 @@ export const FixturesResultsView = ({
           <button
             key={tab.id}
             onClick={() => setFilterStatus(tab.id)}
-            className={`px-3 py-1.5 rounded-lg transition-colors font-semibold cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1.5 min-h-[34px] rounded-lg transition-colors font-semibold cursor-pointer text-xs ${
               filterStatus === tab.id
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -141,7 +141,7 @@ export const FixturesResultsView = ({
       {/* Matches Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredMatches.length === 0 ? (
-          <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-12 text-center text-xs text-slate-400">
+          <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center text-xs text-slate-400">
             No matches found for the selected filter.
           </div>
         ) : (
@@ -156,21 +156,21 @@ export const FixturesResultsView = ({
                 className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between"
               >
                 {/* Header */}
-                <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800">Match #{match.matchNumber}</span>
+                <div className="p-3 sm:p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span className="font-bold text-slate-800 shrink-0">Match #{match.matchNumber}</span>
                     <span className="text-slate-400">·</span>
-                    <span className="text-slate-500 font-medium">{match.round}</span>
+                    <span className="text-slate-500 font-medium truncate">{match.round}</span>
                     {match.isImported && (
-                      <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 py-0.2 rounded font-mono">
+                      <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 py-0.2 rounded font-mono shrink-0">
                         CricHeroes
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded capitalize ${
+                      className={`text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded capitalize ${
                         match.status === 'live'
                           ? 'bg-rose-100 text-rose-700 animate-pulse'
                           : match.status === 'completed'
@@ -183,8 +183,9 @@ export const FixturesResultsView = ({
 
                     <button
                       onClick={() => setScoringMatch({ ...match })}
-                      className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                      className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors flex items-center justify-center cursor-pointer"
                       title="Update scorecard"
+                      aria-label="Edit match scorecard"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
@@ -194,8 +195,9 @@ export const FixturesResultsView = ({
                           onDeleteMatch(match.id);
                         }
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer"
                       title="Delete fixture"
+                      aria-label="Delete match"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -203,46 +205,50 @@ export const FixturesResultsView = ({
                 </div>
 
                 {/* Score Area */}
-                <div className="p-4 space-y-3">
+                <div className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
                   {/* Team A */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-3.5 h-3.5 rounded-full shrink-0"
+                        className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: teamA?.primaryColor || '#0284c7' }}
                       />
-                      <span className="font-bold text-slate-900 text-sm">{teamA?.name}</span>
-                      <span className="text-[11px] text-slate-400 font-mono">({teamA?.shortCode})</span>
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[130px] xs:max-w-[170px] sm:max-w-[200px]">
+                        {teamA?.name}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono shrink-0">({teamA?.shortCode})</span>
                     </div>
-                    <div className="font-mono text-right">
-                      <span className="text-base font-bold text-slate-900">{match.teamAScore || '—'}</span>
+                    <div className="font-mono text-right shrink-0">
+                      <span className="text-sm sm:text-base font-bold text-slate-900">{match.teamAScore || '—'}</span>
                       {match.teamAOvers !== undefined && (
-                        <span className="text-xs text-slate-400 ml-1.5">({match.teamAOvers} ov)</span>
+                        <span className="text-[11px] sm:text-xs text-slate-400 ml-1">({match.teamAOvers} ov)</span>
                       )}
                     </div>
                   </div>
 
                   {/* Team B */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-3.5 h-3.5 rounded-full shrink-0"
+                        className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: teamB?.primaryColor || '#dc2626' }}
                       />
-                      <span className="font-bold text-slate-900 text-sm">{teamB?.name}</span>
-                      <span className="text-[11px] text-slate-400 font-mono">({teamB?.shortCode})</span>
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[130px] xs:max-w-[170px] sm:max-w-[200px]">
+                        {teamB?.name}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono shrink-0">({teamB?.shortCode})</span>
                     </div>
-                    <div className="font-mono text-right">
-                      <span className="text-base font-bold text-slate-900">{match.teamBScore || '—'}</span>
+                    <div className="font-mono text-right shrink-0">
+                      <span className="text-sm sm:text-base font-bold text-slate-900">{match.teamBScore || '—'}</span>
                       {match.teamBOvers !== undefined && (
-                        <span className="text-xs text-slate-400 ml-1.5">({match.teamBOvers} ov)</span>
+                        <span className="text-[11px] sm:text-xs text-slate-400 ml-1">({match.teamBOvers} ov)</span>
                       )}
                     </div>
                   </div>
 
                   {/* Result banner */}
                   {match.resultSummary && (
-                    <div className="p-2 rounded bg-emerald-50 border border-emerald-100 text-xs font-semibold text-emerald-900 flex items-center justify-between">
+                    <div className="p-2 rounded bg-emerald-50 border border-emerald-100 text-xs font-semibold text-emerald-900 flex flex-wrap items-center justify-between gap-1">
                       <span>{match.resultSummary}</span>
                       {motm && (
                         <span className="text-[11px] text-emerald-700 font-normal">
@@ -254,21 +260,21 @@ export const FixturesResultsView = ({
                 </div>
 
                 {/* Footer details */}
-                <div className="p-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                  <div className="flex items-center gap-3">
+                <div className="p-3 bg-slate-50/50 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500 gap-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-slate-400" />
-                      {match.date} · {match.time}
+                      <span>{match.date} · {match.time}</span>
                     </span>
-                    <span className="flex items-center gap-1 truncate max-w-[160px]">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      {match.venue?.split(',')[0]}
+                    <span className="flex items-center gap-1 truncate max-w-[140px]">
+                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{match.venue?.split(',')[0]}</span>
                     </span>
                   </div>
 
                   <button
                     onClick={() => setScoringMatch({ ...match })}
-                    className="text-emerald-700 font-semibold hover:underline cursor-pointer"
+                    className="text-emerald-700 font-semibold hover:underline cursor-pointer ml-auto"
                   >
                     Edit Scorecard →
                   </button>
