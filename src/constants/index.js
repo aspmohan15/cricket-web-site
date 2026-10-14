@@ -1,0 +1,46 @@
+// Tournament Admin Constants & Options
+
+export const TOURNAMENT_STATUSES = ['upcoming', 'current', 'completed', 'archived'];
+
+export const MATCH_STATUSES = ['scheduled', 'live', 'completed', 'abandoned'];
+
+export const PLAYER_ROLES = ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'];
+
+export const BATTING_STYLES = ['Right-hand bat', 'Left-hand bat'];
+
+export const BOWLING_STYLES = [
+  'Right-arm fast',
+  'Right-arm medium',
+  'Left-arm fast',
+  'Right-arm offbreak',
+  'Right-arm legbreak',
+  'Slow left-arm orthodox'
+];
+
+export const FOOD_PREFERENCES = ['Veg', 'Non-Veg', 'Jain', 'Vegan', 'Halal'];
+
+export const MEAL_TYPES = ['Breakfast', 'Lunch', 'High Tea', 'Dinner'];
+
+export const MEAL_STATUSES = ['requested', 'confirmed', 'served'];
+
+export const SPONSOR_TIERS = [
+  'Title Sponsor',
+  'Powered By',
+  'Associate Sponsor',
+  'Official Partner',
+  'Beverage Partner'
+];
+
+export const EXPENSE_CATEGORIES = [
+  'Ground & Pitch',
+  'Umpiring & Match Officials',
+  'Catering & Food',
+  'Live Streaming & Digital Scoring',
+  'Trophies, Medals & Awards',
+  'Team Kits & Match Balls',
+  'Marketing & Media',
+  'Medical & Physiotherapy',
+  'Miscellaneous'
+];
+
+export const USER_ROLES = ['super_admin', 'tournament_admin', 'scorer_admin', 'read_only'];

@@ -1,0 +1,408 @@
+import React from 'react';
+import {
+  Users,
+  Trophy,
+  Calendar,
+  Receipt,
+  Gavel,
+  BadgePercent,
+  UserPlus,
+  ArrowRight,
+  TrendingUp,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+
+export const DashboardView = ({
+  tournament,
+  teams,
+  players,
+  matches,
+  sponsors,
+  expenses,
+  auditLogs,
+  registrations,
+  onNavigate,
+  onQuickAction
+}) => {
+  const completedMatches = matches.filter(m => m.status === 'completed');
+  const liveMatches = matches.filter(m => m.status === 'live');
+  const scheduledMatches = matches.filter(m => m.status === 'scheduled');
+  const totalExpenseSum = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalSponsorSum = sponsors.reduce((sum, s) => sum + s.contributionAmount, 0);
+  const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
+  const pendingRegistrations = registrations.filter(r => r.approvalStatus === 'pending');
+
+  const statCards = [
+    {
+      label: 'Franchise Teams',
+      value: teams.length,
+      subtext: `${teams.reduce((acc, t) => acc + t.totalPlayersAssigned, 0)} squad slots filled`,
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      onClick: () => onNavigate('teams_players')
+    },
+    {
+      label: 'Registered Players',
+      value: players.length,
+      subtext: `${soldPlayers.length} auctioned / retained`,
+      icon: Trophy,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      onClick: () => onNavigate('teams_players')
+    },
+    {
+      label: 'Fixtures & Results',
+      value: matches.length,
+      subtext: `${completedMatches.length} completed · ${liveMatches.length} live`,
+      icon: Calendar,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      onClick: () => onNavigate('fixtures_results')
+    },
+    {
+      label: 'Auction Status',
+      value: `${soldPlayers.length}/${players.length}`,
+      subtext: `${players.filter(p => p.auctionStatus === 'available').length} in active pool`,
+      icon: Gavel,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      onClick: () => onNavigate('auction')
+    },
+    {
+      label: 'Active Sponsors',
+      value: sponsors.length,
+      subtext: `₹${(totalSponsorSum / 100000).toFixed(1)}L committed`,
+      icon: BadgePercent,
+      color: 'text-sky-600',
+      bgColor: 'bg-sky-50',
+      onClick: () => onNavigate('sponsorships')
+    },
+    {
+      label: 'Total Expenses',
+      value: `₹${(totalExpenseSum / 100000).toFixed(2)}L`,
+      subtext: `${expenses.length} ledger vouchers recorded`,
+      icon: Receipt,
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-50',
+      onClick: () => onNavigate('expenses')
+    },
+    {
+      label: 'Registration Queue',
+      value: pendingRegistrations.length,
+      subtext: tournament?.registrationOpen ? 'Registration Window: OPEN' : 'Registration Closed',
+      icon: UserPlus,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      onClick: () => onNavigate('registrations')
+    },
+    {
+      label: 'Operating Net Delta',
+      value: `₹${((totalSponsorSum - totalExpenseSum) / 100000).toFixed(2)}L`,
+      subtext: 'Sponsorships less expenses',
+      icon: TrendingUp,
+      color: totalSponsorSum >= totalExpenseSum ? 'text-emerald-600' : 'text-rose-600',
+      bgColor: totalSponsorSum >= totalExpenseSum ? 'bg-emerald-50' : 'bg-rose-50',
+      onClick: () => onNavigate('expenses')
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Tournament Headline Banner */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1">
+            <span>Edition {tournament?.editionNumber || 1}</span>
+            <span>·</span>
+            <span>{tournament?.year || 2026} Season</span>
+            <span>·</span>
+            <span className="font-mono">{tournament?.format || 'T20'} Format</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+            {tournament?.name}
+          </h1>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+              {tournament?.venue}, {tournament?.city}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              {tournament?.startDate} to {tournament?.endDate}
+            </span>
+            <span className="flex items-center gap-1.5 font-medium">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  tournament?.status === 'current'
+                    ? 'bg-emerald-500'
+                    : tournament?.status === 'upcoming'
+                    ? 'bg-amber-500'
+                    : 'bg-slate-400'
+                }`}
+              />
+              <span className="capitalize">{tournament?.status}</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => onQuickAction('schedule_match')}
+            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+          >
+            Schedule Match
+          </button>
+          <button
+            onClick={() => onQuickAction('record_expense')}
+            className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Add Expense
+          </button>
+          <button
+            onClick={() => onQuickAction('import_cricheroes')}
+            className="px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Import CricHeroes
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={i}
+              onClick={card.onClick}
+              className="bg-white rounded-xl border border-slate-200 p-4.5 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500">{card.label}</span>
+                <div className={`w-8 h-8 rounded-lg ${card.bgColor} ${card.color} flex items-center justify-center`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
+                  {card.value}
+                </span>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">{card.subtext}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Two Column Layout: Fixtures & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Fixtures */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Upcoming & Recent Fixtures</h2>
+              <p className="text-xs text-slate-500">Live scoring and match schedule</p>
+            </div>
+            <button
+              onClick={() => onNavigate('fixtures_results')}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+            >
+              View All Fixtures <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {matches.slice(0, 4).map(match => {
+              const teamA = teams.find(t => t.id === match.teamAId);
+              const teamB = teams.find(t => t.id === match.teamBId);
+              return (
+                <div key={match.id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span className="font-semibold text-slate-700">Match #{match.matchNumber} · {match.round}</span>
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      {match.date} · {match.time}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-4">
+                      {/* Team A */}
+                      <div className="flex items-center gap-2 min-w-[130px]">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: teamA?.primaryColor || '#0284c7' }}
+                        />
+                        <span className="font-bold text-slate-900 text-sm">{teamA?.shortCode || 'TMA'}</span>
+                        <span className="text-xs text-slate-600 truncate">{teamA?.name}</span>
+                        {match.teamAScore && (
+                          <span className="font-mono text-xs font-bold text-slate-900 ml-auto">{match.teamAScore}</span>
+                        )}
+                      </div>
+
+                      <span className="text-xs text-slate-400 font-bold">vs</span>
+
+                      {/* Team B */}
+                      <div className="flex items-center gap-2 min-w-[130px]">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: teamB?.primaryColor || '#dc2626' }}
+                        />
+                        <span className="font-bold text-slate-900 text-sm">{teamB?.shortCode || 'TMB'}</span>
+                        <span className="text-xs text-slate-600 truncate">{teamB?.name}</span>
+                        {match.teamBScore && (
+                          <span className="font-mono text-xs font-bold text-slate-900 ml-auto">{match.teamBScore}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      {match.status === 'completed' ? (
+                        <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          {match.resultSummary || 'Completed'}
+                        </span>
+                      ) : match.status === 'live' ? (
+                        <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded animate-pulse">
+                          ● {match.resultSummary || 'Live Match'}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-500 font-medium">
+                          Venue: {match.venue?.split(',')[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Administrative Audit Feed */}
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Recent Admin Activities</h2>
+              <p className="text-xs text-slate-500">Audit trail of tournament changes</p>
+            </div>
+            <button
+              onClick={() => onNavigate('import_history')}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+            >
+              Logs
+            </button>
+          </div>
+
+          <div className="p-4 space-y-3.5 max-h-[380px] overflow-y-auto">
+            {auditLogs.slice(0, 6).map(log => (
+              <div key={log.id} className="flex items-start gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5 text-slate-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-800 leading-snug font-medium">
+                    {log.details}
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                    <span className="font-semibold text-slate-600">{log.userName}</span>
+                    <span>·</span>
+                    <span className="font-mono">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Row: Recent Expenses & Registration Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Latest Expenses */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Latest Tournament Expenses</h3>
+              <p className="text-xs text-slate-500">Recent operational disbursements</p>
+            </div>
+            <button
+              onClick={() => onNavigate('expenses')}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+            >
+              View Ledger <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-2.5">
+            {expenses.slice(0, 4).map(e => (
+              <div key={e.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                <div>
+                  <div className="font-semibold text-slate-800">{e.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {e.category} · {e.vendorName} · {e.date}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono font-bold text-slate-900">₹{e.amount.toLocaleString()}</div>
+                  <span className="text-[10px] text-emerald-700 font-medium capitalize">{e.paymentStatus}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Registration Summary Card */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Player Registration Summary</h3>
+              <p className="text-xs text-slate-500">Applicant approvals & roster pipeline</p>
+            </div>
+            <button
+              onClick={() => onNavigate('registrations')}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+            >
+              Manage Queue <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+            <div className="p-3 bg-emerald-50 rounded-lg">
+              <span className="text-lg font-bold font-mono text-emerald-700">
+                {registrations.filter(r => r.approvalStatus === 'approved').length}
+              </span>
+              <span className="block text-[11px] font-medium text-emerald-800 mt-0.5">Approved</span>
+            </div>
+            <div className="p-3 bg-amber-50 rounded-lg">
+              <span className="text-lg font-bold font-mono text-amber-700">
+                {registrations.filter(r => r.approvalStatus === 'pending').length}
+              </span>
+              <span className="block text-[11px] font-medium text-amber-800 mt-0.5">Pending Review</span>
+            </div>
+            <div className="p-3 bg-slate-100 rounded-lg">
+              <span className="text-lg font-bold font-mono text-slate-700">
+                {registrations.filter(r => r.approvalStatus === 'waitlisted').length}
+              </span>
+              <span className="block text-[11px] font-medium text-slate-700 mt-0.5">Waitlisted</span>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/70 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-emerald-600" />
+              <span className="text-slate-700">Registration Portal Status</span>
+            </div>
+            <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+              tournament?.registrationOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {tournament?.registrationOpen ? 'Accepting Applications' : 'Submissions Closed'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
