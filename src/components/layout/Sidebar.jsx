@@ -70,14 +70,14 @@ export const Sidebar = ({
         <div className="h-16 px-4 sm:px-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-emerald-900/40">
-              🏏
+              🦅
             </div>
             <div>
               <span className="text-base font-bold text-white tracking-tight block leading-tight">
-                PavilionHQ
+                Warhawks
               </span>
-              <span className="text-[11px] text-slate-400 font-medium block">
-                Tournament Command
+              <span className="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">
+                Tournament Organizer
               </span>
             </div>
           </div>
@@ -95,8 +95,10 @@ export const Sidebar = ({
         {/* Selected Edition Context Card */}
         <div className="p-3 mx-3 my-2 bg-slate-800/70 rounded-lg border border-slate-700/60 shrink-0">
           <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-            <span className="font-medium uppercase tracking-wider">Active Edition</span>
-            <span className="font-mono text-emerald-400 font-bold">Ed. {activeTournament?.editionNumber || '—'}</span>
+            <span className="font-medium uppercase tracking-wider text-[10px] text-emerald-400 font-bold">
+              Host: Warhawks
+            </span>
+            <span className="font-mono text-white font-bold">Ed. {activeTournament?.editionNumber || '—'}</span>
           </div>
           <p className="text-xs font-semibold text-white truncate">
             {activeTournament?.name || 'No Tournament Selected'}
@@ -153,9 +155,9 @@ export const Sidebar = ({
 
         {/* Footer Info with safe-area bottom */}
         <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <span>Relational Schema (JS)</span>
-          <span className="flex items-center gap-1 text-emerald-400 font-mono font-medium">
-            <Sparkles className="w-3 h-3" /> Supabase
+          <span className="font-medium text-slate-400">Warhawks Operations</span>
+          <span className="flex items-center gap-1 text-emerald-400 font-mono font-medium text-[10px]">
+            <Sparkles className="w-3 h-3" /> Certified
           </span>
         </div>
       </aside>

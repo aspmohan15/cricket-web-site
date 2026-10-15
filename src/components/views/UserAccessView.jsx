@@ -38,7 +38,7 @@ export const UserAccessView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">User Access & Role-Based Permissions (RBAC)</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure administrative security policies and test authorization levels across all operations.
+            Configure Warhawks administrative security policies and test authorization levels across all tournament operations.
           </p>
         </div>
 
@@ -55,10 +55,10 @@ export const UserAccessView = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
             <Lock className="w-3.5 h-3.5" />
-            Server-Side Authorization Enforced
+            Warhawks Server-Side Authorization Enforced
           </div>
           <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
-            Mutations are strictly validated against user session tokens. UI buttons and endpoints refuse execution if the active role lacks explicit entitlement in the database policy layer.
+            Mutations are strictly validated against Warhawks tournament administration session tokens. Participant and guest roles are prevented from performing unauthorized operations.
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export const UserAccessView = ({
       {/* Admin Personnel Directory */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-bold text-slate-900 truncate">Authorized Admin Personnel</h3>
+          <h3 className="text-sm font-bold text-slate-900 truncate">Warhawks Tournament Operations Personnel</h3>
           <span className="text-xs font-mono text-slate-500 shrink-0">{users.length} accounts</span>
         </div>
 

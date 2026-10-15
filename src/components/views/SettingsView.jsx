@@ -8,10 +8,12 @@ import {
   RotateCcw,
   Key,
   Shield,
+  ShieldCheck,
   FileSpreadsheet,
   Download,
   AlertTriangle
 } from 'lucide-react';
+import { DEFAULT_ORGANIZER_NAME, ORGANIZER_DETAILS } from '../../constants';
 
 export const SettingsView = ({
   settings,
@@ -48,13 +50,13 @@ export const SettingsView = ({
 
   const handleExportDatabaseJson = () => {
     try {
-      const data = localStorage.getItem('pavilionhq_admin_db_v1');
+      const data = localStorage.getItem('warhawks_admin_db_v1') || localStorage.getItem('pavilionhq_admin_db_v1');
       if (data) {
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `pavilionhq_backup_${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `warhawks_tournaments_backup_${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -102,6 +104,69 @@ export const SettingsView = ({
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Official Tournament Organizer Brand Identity */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                🦅
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-900 truncate">Official Tournament Organizer Brand</h3>
+                <p className="text-xs text-slate-500 truncate">Designated organization branch responsible for hosting, scheduling, and sanctioning</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md self-start sm:self-auto">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              Verified Organizer Branch
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Official Organizer Name</label>
+              <input
+                type="text"
+                value={form.organizerName || DEFAULT_ORGANIZER_NAME}
+                onChange={e => setForm({ ...form, organizerName: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Official brand identity displayed across all tournaments.</p>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Organizer Authority Role</label>
+              <input
+                type="text"
+                value={form.organizerRole || 'Official Tournament Organizer & Host'}
+                onChange={e => setForm({ ...form, organizerRole: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 font-medium"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Operational capacity displayed on official scorecards.</p>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Operations Branch / Department</label>
+              <input
+                type="text"
+                value={form.organizerBranch || ORGANIZER_DETAILS.branch}
+                onChange={e => setForm({ ...form, organizerBranch: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Organizer Official Contact Email</label>
+              <input
+                type="email"
+                value={form.organizerEmail || ORGANIZER_DETAILS.contactEmail}
+                onChange={e => setForm({ ...form, organizerEmail: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Supabase PostgreSQL Configuration */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

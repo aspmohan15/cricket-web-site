@@ -62,7 +62,7 @@ export const SponsorshipView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Sponsorship Partnerships</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage corporate brand agreements, sponsorship tiers, and website visibility for {tournament.name}.
+            Manage corporate brand agreements, sponsorship tiers, and website visibility for {tournament.name} organized by Warhawks.
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export const SponsorshipView = ({
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Add Tournament Sponsor"
-        subtitle={`Associate partnership with ${tournament.name}`}
+        subtitle={`Associate partnership with ${tournament.name} (Organized by Warhawks)`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
           <div className="grid grid-cols-2 gap-3">

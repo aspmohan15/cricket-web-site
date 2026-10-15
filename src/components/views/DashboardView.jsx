@@ -12,8 +12,10 @@ import {
   MapPin,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
+import { DEFAULT_ORGANIZER_NAME, ORGANIZER_DETAILS } from '../../constants';
 
 export const DashboardView = ({
   tournament,
@@ -114,6 +116,13 @@ export const DashboardView = ({
       {/* Tournament Headline Banner */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="min-w-0">
+          {/* Official Organizer Identification Badge */}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold mb-2.5 shadow-xs">
+            <span className="text-emerald-400 font-bold">🦅 {DEFAULT_ORGANIZER_NAME}</span>
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-200 font-medium">Official Tournament Organizer & Host</span>
+          </div>
+
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1">
             <span>Edition {tournament?.editionNumber || 1}</span>
             <span>·</span>
@@ -125,6 +134,13 @@ export const DashboardView = ({
             {tournament?.name}
           </h1>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 mt-2">
+            <span className="flex items-center gap-1.5 font-medium text-slate-700">
+              <span className="text-slate-400">Organizer:</span>
+              <span className="font-bold text-slate-900 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                {tournament?.organizer || DEFAULT_ORGANIZER_NAME}
+              </span>
+            </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span>{tournament?.venue}, {tournament?.city}</span>
@@ -403,6 +419,42 @@ export const DashboardView = ({
             }`}>
               {tournament?.registrationOpen ? 'Open' : 'Closed'}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* About Warhawks: Official Tournament Organizer Identity */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 rounded-xl p-4 sm:p-6 text-white border border-slate-800 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-3xl">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" />
+                Tournament Host & Governing Branch
+              </span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded border border-emerald-500/30">
+                Official Organizer
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              About Warhawks Tournament Operations
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              <strong className="text-white">Warhawks</strong> is the official tournament organizer and hosting branch responsible for creating, scheduling, and orchestrating championships, auctions, and competitive tournaments on this platform. Participating franchise teams (such as Apex Titans, Royal Strikers, and Coastal Blasters) and athletes compete under rules and schedules sanctioned by Warhawks.
+            </p>
+          </div>
+
+          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800">
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] text-slate-400 block font-medium uppercase tracking-wider">Organizer Contact</span>
+              <span className="text-xs font-mono text-emerald-400 font-semibold">{ORGANIZER_DETAILS.contactEmail}</span>
+            </div>
+            <button
+              onClick={() => onNavigate('editions')}
+              className="px-3.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors cursor-pointer"
+            >
+              Manage Editions
+            </button>
           </div>
         </div>
       </div>

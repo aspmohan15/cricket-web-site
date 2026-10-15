@@ -166,7 +166,7 @@ export const TeamsPlayersView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Franchise Teams & Player Squads</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage franchise rosters, player bidding baselines, captaincy, and dietary profiles for {tournament?.name}.
+            Manage franchise rosters, player bidding baselines, captaincy, and dietary profiles for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 

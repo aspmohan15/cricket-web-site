@@ -549,6 +549,24 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Official Warhawks Tournament Organizer Footer */}
+        <footer className="border-t border-slate-200 bg-white py-4 sm:py-5 px-3 sm:px-6 lg:px-8 text-xs text-slate-500 mt-auto">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <span className="font-extrabold text-slate-900 tracking-tight text-sm flex items-center gap-1.5">
+                <span>🦅 Warhawks</span>
+              </span>
+              <span className="text-slate-300 hidden sm:inline">|</span>
+              <span className="text-slate-600 font-medium">Official Tournament Host & Organizing Branch</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400 text-[11px]">
+              <span>Tournament Creation & Roster Governance</span>
+              <span className="hidden sm:inline">•</span>
+              <span>All Editions Partitioned</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

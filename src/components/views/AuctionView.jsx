@@ -95,7 +95,7 @@ export const AuctionView = ({
           </div>
           <h1 className="text-xl font-bold text-slate-900">Franchise Player Auction Stage</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Live point bidding, purse tracking, squad constraints, and transaction history for {tournament.name}.
+            Live player point bidding, franchise purse tracking, squad constraints, and auction gavel operations conducted by Warhawks for {tournament.name}.
           </p>
         </div>
 

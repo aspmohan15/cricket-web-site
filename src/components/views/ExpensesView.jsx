@@ -96,9 +96,14 @@ export const ExpensesView = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-900 text-white text-[10px] font-semibold mb-1">
+            <span className="text-emerald-400">🦅 Warhawks Treasury</span>
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-200">Tournament Operations Ledger</span>
+          </div>
           <h1 className="text-xl font-bold text-slate-900">Tournament Expenses & Financial Ledger</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Audit-grade expense recording, category allocations, vendor receipts, and export for {tournament.name}.
+            Audit-grade expense recording, category allocations, vendor receipts, and export for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 

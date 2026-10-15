@@ -133,9 +133,12 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-900 text-[10px] font-semibold mb-1 border border-purple-200">
+            <span>🦅 Warhawks Ingestion Engine</span>
+          </div>
           <h1 className="text-xl font-bold text-slate-900">Spreadsheet & CricHeroes Import Engine</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Bulk ingest historical match scorecards, player registrations, and financial ledgers with duplicate validation.
+            Bulk ingest historical match scorecards, player registrations, and financial ledgers for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 
@@ -155,7 +158,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
       <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5 sm:p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
         <div className="text-xs text-purple-900 leading-relaxed">
-          <span className="font-bold">CricHeroes Authorized Exporter Protocol:</span> Since CricHeroes does not provide a public REST API for direct database sync, export your match scorecards or tournament summary sheets into CSV format from the CricHeroes official tournament portal and load them through this validator.
+          <span className="font-bold">CricHeroes Authorized Exporter Protocol:</span> Since CricHeroes does not provide a public REST API for direct database sync, export your match scorecards or tournament summary sheets into CSV format from the CricHeroes official tournament portal for Warhawks competitions and load them through this validator.
         </div>
       </div>
 

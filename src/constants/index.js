@@ -1,5 +1,18 @@
 // Tournament Admin Constants & Options
 
+// Official Tournament Host & Organizer Identity
+export const DEFAULT_ORGANIZER_NAME = 'Warhawks';
+
+export const ORGANIZER_DETAILS = {
+  name: 'Warhawks',
+  shortName: 'Warhawks',
+  title: 'Official Tournament Organizer & Host',
+  branch: 'Warhawks Tournament Operations',
+  description: 'Warhawks is the official tournament organizing branch responsible for creating, hosting, and sanctioning tournaments on this platform.',
+  contactEmail: 'tournaments@warhawks.org',
+  headquarters: 'Warhawks Sports Command & Tournament Operations'
+};
+
 export const TOURNAMENT_STATUSES = ['upcoming', 'current', 'completed', 'archived'];
 
 export const MATCH_STATUSES = ['scheduled', 'live', 'completed', 'abandoned'];

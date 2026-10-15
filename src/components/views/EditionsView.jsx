@@ -8,9 +8,11 @@ import {
   Archive,
   Edit,
   Coins,
-  ShieldAlert
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
+import { DEFAULT_ORGANIZER_NAME, ORGANIZER_DETAILS } from '../../constants';
 
 export const EditionsView = ({
   tournaments,
@@ -26,6 +28,9 @@ export const EditionsView = ({
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    organizer: DEFAULT_ORGANIZER_NAME,
+    organizerRole: 'Official Tournament Organizer & Host',
+    organizerBranch: ORGANIZER_DETAILS.branch,
     editionNumber: 7,
     year: 2028,
     format: 'T20',
@@ -52,6 +57,9 @@ export const EditionsView = ({
     const nextYear = new Date().getFullYear() + 1;
     setFormData({
       name: `Premier Cricket Super League - Edition ${nextEditionNum}`,
+      organizer: DEFAULT_ORGANIZER_NAME,
+      organizerRole: 'Official Tournament Organizer & Host',
+      organizerBranch: ORGANIZER_DETAILS.branch,
       editionNumber: nextEditionNum,
       year: nextYear,
       format: 'T20',
@@ -69,7 +77,7 @@ export const EditionsView = ({
       maxSquadSize: 18,
       minSquadSize: 14,
       maxOverseasPlayers: 4,
-      description: 'Championship edition featuring multi-team round robin and knockout finals.',
+      description: 'Championship edition organized and hosted by Warhawks, featuring multi-team round robin and knockout finals.',
       isArchived: false
     });
     setCreateModalOpen(true);
@@ -177,6 +185,14 @@ export const EditionsView = ({
                     {edition.registrationOpen ? 'Accepting Players' : 'Closed'}
                   </span>
                 </div>
+                <div className="col-span-2 flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100">
+                  <span className="text-slate-500 font-medium">Tournament Host:</span>
+                  <span className="font-bold text-slate-900 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    <span>{edition.organizer || DEFAULT_ORGANIZER_NAME}</span>
+                    <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded font-sans">Organizer</span>
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
@@ -212,7 +228,7 @@ export const EditionsView = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4">Edition</th>
+                <th className="py-3 px-4">Edition & Host</th>
                 <th className="py-3 px-4">Year & Format</th>
                 <th className="py-3 px-4">Venue & City</th>
                 <th className="py-3 px-4">Teams</th>
@@ -248,8 +264,10 @@ export const EditionsView = ({
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            ID: {edition.id}
+                          <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                            <span className="text-slate-400">Host:</span>
+                            <span className="font-semibold text-slate-700">{edition.organizer || DEFAULT_ORGANIZER_NAME}</span>
+                            <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded font-sans">Organizer</span>
                           </div>
                         </div>
                       </div>
@@ -351,6 +369,25 @@ export const EditionsView = ({
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span>Official Tournament Host / Organizer</span>
+                <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Warhawks Official Branch
+                </span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.organizer || DEFAULT_ORGANIZER_NAME}
+                onChange={e => setFormData({ ...formData, organizer: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Warhawks is the official tournament organizer and host responsible for scheduling, rules, and operations.
+              </p>
             </div>
 
             <div>
@@ -513,6 +550,22 @@ export const EditionsView = ({
                   value={editingEdition.name}
                   onChange={e => setEditingEdition({ ...editingEdition, name: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Official Tournament Organizer / Host</span>
+                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Warhawks Official Branch
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingEdition.organizer || DEFAULT_ORGANIZER_NAME}
+                  onChange={e => setEditingEdition({ ...editingEdition, organizer: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
 

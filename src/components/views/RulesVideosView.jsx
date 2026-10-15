@@ -51,7 +51,7 @@ export const RulesVideosView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Tournament Rules & Official Demo Videos</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Maintain playing conditions, disciplinary code of conduct, auction policies, and video guides for {tournament.name}.
+            Official playing conditions, disciplinary code, auction policies, and video guides sanctioned by Warhawks for {tournament.name}.
           </p>
         </div>
 
@@ -173,7 +173,7 @@ export const RulesVideosView = ({
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Add Tournament Regulation / Policy"
-        subtitle={`Rules will be enforced across ${tournament.name}`}
+        subtitle={`Rules will be enforced by Warhawks Tournament Operations across ${tournament.name}`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
           <div>

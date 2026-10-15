@@ -79,9 +79,12 @@ export const FixturesResultsView = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-semibold mb-1 border border-emerald-200">
+            <span>🦅 Sanctioned & Managed by Warhawks</span>
+          </div>
           <h1 className="text-xl font-bold text-slate-900">Fixtures, Live Scores & Results</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Schedule tournament fixtures, enter real-time CricHeroes match results, and publish official outcomes.
+            Official match fixtures, real-time CricHeroes match results, and verified outcomes for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 

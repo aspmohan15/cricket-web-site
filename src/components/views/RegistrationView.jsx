@@ -65,7 +65,7 @@ export const RegistrationView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Player Registration Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Public portal admission window, applicant approval pipeline, and tournament eligibility verification.
+            Official athlete admission portal, applicant approval pipeline, and roster eligibility verification conducted by Warhawks.
           </p>
         </div>
 
@@ -335,7 +335,7 @@ export const RegistrationView = ({
           isOpen={true}
           onClose={() => setReviewModalApp(null)}
           title={`Review Application: ${reviewModalApp.fullName}`}
-          subtitle="Verification check against tournament regulations"
+          subtitle="Warhawks Organizing Committee admission review against tournament regulations"
         >
           <div className="space-y-4 text-xs">
             <div className="p-3 bg-slate-50 rounded-lg space-y-1.5 border border-slate-200">

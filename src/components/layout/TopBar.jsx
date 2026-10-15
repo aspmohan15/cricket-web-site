@@ -114,7 +114,12 @@ export const TopBar = ({
 
         {/* Responsive Breadcrumb / Current View title */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-500 font-medium min-w-0">
-          <span className="hidden sm:inline text-slate-400 shrink-0">PavilionHQ</span>
+          <span className="hidden sm:inline text-slate-800 font-bold tracking-tight shrink-0 flex items-center gap-1">
+            <span>Warhawks</span>
+            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-sans">
+              Host
+            </span>
+          </span>
           <span className="hidden sm:inline text-slate-300 shrink-0">/</span>
           <span className="text-slate-900 font-bold sm:font-semibold truncate max-w-[110px] xs:max-w-[140px] sm:max-w-[220px] md:max-w-[320px]">
             <span className="sm:hidden">{sectionTitles[currentSection] || 'Admin'}</span>
@@ -149,8 +154,9 @@ export const TopBar = ({
 
         {editionDropdownOpen && (
           <div className="fixed inset-x-3 top-16 mt-1 sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:mt-2 sm:w-72 sm:max-w-sm bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50">
-            <div className="px-3 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-              Select Tournament Edition
+            <div className="px-3 py-2 text-[11px] font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+              <span>Warhawks Tournaments</span>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Host</span>
             </div>
             <div className="max-h-64 overflow-y-auto py-1">
               {tournaments.map(t => {

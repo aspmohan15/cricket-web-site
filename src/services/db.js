@@ -1,8 +1,10 @@
-// PavilionHQ Tournament Database Service (JavaScript)
+// Warhawks Tournament Database Service (JavaScript)
+import { DEFAULT_ORGANIZER_NAME, ORGANIZER_DETAILS } from '../constants';
 
-const STORAGE_KEY = 'pavilionhq_admin_db_v1';
+const STORAGE_KEY = 'warhawks_admin_db_v1';
+const LEGACY_STORAGE_KEY = 'pavilionhq_admin_db_v1';
 
-// Initial Seed Data
+// Initial Seed Data with Official Organizer Identity
 const initialTournaments = [
   {
     id: 'tour-ed5-2026',
@@ -11,6 +13,9 @@ const initialTournaments = [
     year: 2026,
     format: 'T20',
     status: 'current',
+    organizer: DEFAULT_ORGANIZER_NAME,
+    organizerRole: 'Official Tournament Organizer & Host',
+    organizerBranch: ORGANIZER_DETAILS.branch,
     startDate: '2026-10-10',
     endDate: '2026-11-05',
     venue: 'National Cricket Stadium & Oval Grounds',
@@ -24,7 +29,7 @@ const initialTournaments = [
     maxSquadSize: 18,
     minSquadSize: 14,
     maxOverseasPlayers: 4,
-    description: 'The premier franchise T20 championship bringing together top tier athletic talent, franchise auctions, and international match officials.',
+    description: 'The premier franchise T20 championship organized and hosted by Warhawks, bringing together top-tier athletic talent, franchise auctions, and international match officials.',
     isArchived: false,
     createdAt: '2026-07-15T09:00:00Z',
     updatedAt: '2026-10-12T14:30:00Z'
@@ -36,6 +41,9 @@ const initialTournaments = [
     year: 2025,
     format: 'T20',
     status: 'completed',
+    organizer: DEFAULT_ORGANIZER_NAME,
+    organizerRole: 'Official Tournament Organizer & Host',
+    organizerBranch: ORGANIZER_DETAILS.branch,
     startDate: '2025-10-05',
     endDate: '2025-11-02',
     venue: 'Central Metropolis Arena',
@@ -49,7 +57,7 @@ const initialTournaments = [
     maxSquadSize: 16,
     minSquadSize: 12,
     maxOverseasPlayers: 3,
-    description: 'Edition 4 concluded with Royal Strikers lifting the championship trophy in a thrilling last-over final.',
+    description: 'Edition 4 concluded under Warhawks tournament management with Royal Strikers lifting the championship trophy in a thrilling last-over final.',
     isArchived: true,
     createdAt: '2025-06-10T10:00:00Z',
     updatedAt: '2025-11-05T18:00:00Z'
@@ -61,6 +69,9 @@ const initialTournaments = [
     year: 2027,
     format: 'T20',
     status: 'upcoming',
+    organizer: DEFAULT_ORGANIZER_NAME,
+    organizerRole: 'Official Tournament Organizer & Host',
+    organizerBranch: ORGANIZER_DETAILS.branch,
     startDate: '2027-10-15',
     endDate: '2027-11-12',
     venue: 'Grand International Cricket Complex',
@@ -74,7 +85,7 @@ const initialTournaments = [
     maxSquadSize: 20,
     minSquadSize: 15,
     maxOverseasPlayers: 4,
-    description: 'Upcoming landmark 6th edition featuring expanded team rosters, enhanced player auction budgets, and 4K broadcast production.',
+    description: 'Upcoming landmark 6th edition hosted by Warhawks, featuring expanded team rosters, enhanced player auction budgets, and 4K broadcast production.',
     isArchived: false,
     createdAt: '2026-09-20T11:00:00Z',
     updatedAt: '2026-10-14T08:00:00Z'
@@ -987,7 +998,7 @@ const initialUsers = [
   {
     id: 'usr-01',
     name: 'Vikram Sengupta',
-    email: 'director@pavilionhq.com',
+    email: 'operations@warhawks.org',
     role: 'super_admin',
     avatarUrl: '',
     assignedTournaments: ['*']
@@ -995,7 +1006,7 @@ const initialUsers = [
   {
     id: 'usr-02',
     name: 'Priya Nambiar',
-    email: 'priya.n@pavilionhq.com',
+    email: 'tournaments@warhawks.org',
     role: 'tournament_admin',
     avatarUrl: '',
     assignedTournaments: ['tour-ed5-2026', 'tour-ed6-2027']
@@ -1003,7 +1014,7 @@ const initialUsers = [
   {
     id: 'usr-03',
     name: 'Rohan Sharma',
-    email: 'rohan.scorer@pavilionhq.com',
+    email: 'scoring@warhawks.org',
     role: 'scorer_admin',
     avatarUrl: '',
     assignedTournaments: ['tour-ed5-2026']
@@ -1019,11 +1030,15 @@ const initialUsers = [
 ];
 
 const initialSettings = {
+  organizerName: DEFAULT_ORGANIZER_NAME,
+  organizerRole: 'Official Tournament Organizer & Host',
+  organizerBranch: ORGANIZER_DETAILS.branch,
+  organizerEmail: ORGANIZER_DETAILS.contactEmail,
   supabaseConnected: true,
   supabaseUrl: 'https://xyzabcdefg.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emFiY2RlZmciLCJyb2xlIjoiYW5vbiJ9',
   cloudinaryConnected: true,
-  cloudinaryCloudName: 'pavilionhq-cricket-cloud',
+  cloudinaryCloudName: 'warhawks-cricket-cloud',
   cloudinaryUploadPreset: 'tournament_admin_unsigned',
   cloudinaryApiKey: '894729184719284',
   currencySymbol: '₹',
@@ -1038,9 +1053,25 @@ class TournamentDatabase {
 
   loadFromStorage() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Ensure seamless backward compatibility and Warhawks organizer consistency
+        if (parsed.tournaments && Array.isArray(parsed.tournaments)) {
+          parsed.tournaments = parsed.tournaments.map(t => ({
+            ...t,
+            organizer: t.organizer || DEFAULT_ORGANIZER_NAME,
+            organizerRole: t.organizerRole || 'Official Tournament Organizer & Host',
+            organizerBranch: t.organizerBranch || ORGANIZER_DETAILS.branch
+          }));
+        }
+        if (parsed.settings) {
+          parsed.settings.organizerName = parsed.settings.organizerName || DEFAULT_ORGANIZER_NAME;
+          parsed.settings.organizerRole = parsed.settings.organizerRole || 'Official Tournament Organizer & Host';
+          parsed.settings.organizerBranch = parsed.settings.organizerBranch || ORGANIZER_DETAILS.branch;
+          parsed.settings.organizerEmail = parsed.settings.organizerEmail || ORGANIZER_DETAILS.contactEmail;
+        }
+        return parsed;
       }
     } catch {
       // ignore
@@ -1131,8 +1162,24 @@ class TournamentDatabase {
     return this.schema.tournaments.find(t => t.id === id);
   }
 
+  getOrganizers() {
+    return [
+      {
+        id: 'warhawks',
+        name: DEFAULT_ORGANIZER_NAME,
+        role: 'Official Tournament Organizer & Host',
+        branch: ORGANIZER_DETAILS.branch,
+        contactEmail: ORGANIZER_DETAILS.contactEmail,
+        isDefault: true
+      }
+    ];
+  }
+
   createTournament(data) {
     const newTournament = {
+      organizer: data.organizer || DEFAULT_ORGANIZER_NAME,
+      organizerRole: data.organizerRole || 'Official Tournament Organizer & Host',
+      organizerBranch: data.organizerBranch || ORGANIZER_DETAILS.branch,
       ...data,
       id: `tour-ed${data.editionNumber}-${data.year}-${Date.now().toString(36)}`,
       createdAt: new Date().toISOString(),
@@ -1140,7 +1187,7 @@ class TournamentDatabase {
     };
     this.schema.tournaments.unshift(newTournament);
     this.saveToStorage();
-    this.logAction(newTournament.id, 'Super Admin', 'super_admin', 'CREATE_TOURNAMENT', 'Tournament', newTournament.id, `Created edition: ${newTournament.name}`);
+    this.logAction(newTournament.id, 'Super Admin', 'super_admin', 'CREATE_TOURNAMENT', 'Tournament', newTournament.id, `Created edition: ${newTournament.name} (Organizer: ${newTournament.organizer})`);
     return newTournament;
   }
 

@@ -39,9 +39,12 @@ export const StandingsView = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-semibold mb-1 border border-emerald-200">
+            <span>🦅 Official Standings · Certified by Warhawks</span>
+          </div>
           <h1 className="text-xl font-bold text-slate-900">Points Table & Net Run Rate (NRR)</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Auto-calculated standings from verified match scorecards with ICC standard Net Run Rate formulas.
+            Auto-calculated standings from verified match scorecards with ICC standard Net Run Rate formulas for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 

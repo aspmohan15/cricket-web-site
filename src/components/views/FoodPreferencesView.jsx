@@ -93,9 +93,12 @@ export const FoodPreferencesView = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-semibold mb-1 border border-emerald-200">
+            <span>🦅 Warhawks Catering Command</span>
+          </div>
           <h1 className="text-xl font-bold text-slate-900">Player Food & Dietary Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Track nutritional preferences, match-day catering buffets, and distribution status for {tournament.name}.
+            Track nutritional preferences, match-day catering buffets, and distribution status for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 
