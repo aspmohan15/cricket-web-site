@@ -91,10 +91,8 @@ export const TopBar = ({
   };
 
   const roles = [
-    { id: 'super_admin', label: 'Super Admin', desc: 'Full write access across all modules' },
-    { id: 'tournament_admin', label: 'Tournament Admin', desc: 'Manage teams, fixtures, and rules' },
-    { id: 'scorer_admin', label: 'Scorer Operator', desc: 'Scorecard entry & result sign-off' },
-    { id: 'read_only', label: 'Read-Only Viewer', desc: 'Audit observer access' }
+    { id: 'organizer', label: 'Organizer', desc: 'Warhawks full operational control across all modules' },
+    { id: 'player', label: 'Player', desc: 'Browse tournaments, view scorecards, standings & register' }
   ];
 
   return (
@@ -210,49 +208,89 @@ export const TopBar = ({
 
           {quickActionOpen && (
             <div className="fixed inset-x-3 top-16 mt-1 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-64 max-w-sm sm:max-w-none bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs">
-              <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                Administrative Actions
+              <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                <span>{currentUser.role === 'organizer' ? 'Organizer Actions' : 'Player Quick Links'}</span>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${currentUser.role === 'organizer' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                  {currentUser.role === 'organizer' ? 'Host' : 'Athlete'}
+                </span>
               </div>
-              <button
-                onClick={() => {
-                  onQuickAction('add_team');
-                  setQuickActionOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
-              >
-                <Users className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Add Franchise Team</span>
-              </button>
-              <button
-                onClick={() => {
-                  onQuickAction('schedule_match');
-                  setQuickActionOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
-              >
-                <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Schedule Fixture</span>
-              </button>
-              <button
-                onClick={() => {
-                  onQuickAction('record_expense');
-                  setQuickActionOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
-              >
-                <Receipt className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Record Expense</span>
-              </button>
-              <button
-                onClick={() => {
-                  onQuickAction('import_cricheroes');
-                  setQuickActionOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-purple-500 shrink-0" />
-                <span>Import CricHeroes CSV</span>
-              </button>
+              {currentUser.role === 'organizer' ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onQuickAction('add_team');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 text-blue-500 shrink-0" />
+                    <span>Add Franchise Team</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('schedule_match');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Schedule Fixture</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('record_expense');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Receipt className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Record Expense</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('import_cricheroes');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-purple-500 shrink-0" />
+                    <span>Import CricHeroes CSV</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      onQuickAction('register_tournament');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Register for Tournament</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('view_fixtures');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 text-purple-500 shrink-0" />
+                    <span>View Fixtures & Scores</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('view_standings');
+                      setQuickActionOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 flex items-center gap-2 hover:bg-slate-50 text-slate-700 cursor-pointer"
+                  >
+                    <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>View Points Table</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

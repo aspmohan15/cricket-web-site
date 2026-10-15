@@ -20,6 +20,7 @@ export const TeamsPlayersView = ({
   tournament,
   teams,
   players,
+  currentUser,
   onCreateTeam,
   onUpdateTeam,
   onDeleteTeam,
@@ -28,6 +29,7 @@ export const TeamsPlayersView = ({
   onDeletePlayer,
   onOpenImport
 }) => {
+  const isOrganizer = currentUser?.role === 'organizer';
   const [activeTab, setActiveTab] = useState('squads');
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('all');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
@@ -171,65 +173,82 @@ export const TeamsPlayersView = ({
         </div>
 
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-          <button
-            onClick={onOpenImport}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Import CSV</span>
-          </button>
-          <button
-            onClick={handleExportRoster}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export Roster</span>
-          </button>
-          <button
-            onClick={() => {
-              setTeamForm({
-                name: '',
-                shortCode: '',
-                city: tournament?.city || 'Mumbai',
-                primaryColor: '#0284c7',
-                secondaryColor: '#0f172a',
-                ownerName: '',
-                budgetTotal: tournament?.totalBudgetPointsPerTeam || 10000000
-              });
-              setCreateTeamModalOpen(true);
-            }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Team</span>
-          </button>
-          <button
-            onClick={() => {
-              setPlayerForm({
-                name: '',
-                jerseyNumber: Math.floor(Math.random() * 99) + 1,
-                role: 'All-Rounder',
-                battingStyle: 'Right-hand bat',
-                bowlingStyle: 'Right-arm medium',
-                basePrice: 500000,
-                soldPrice: 0,
-                teamId: '',
-                isCaptain: false,
-                isOverseas: false,
-                email: '',
-                phone: '',
-                city: tournament?.city || 'Mumbai',
-                shirtSize: 'L',
-                foodPreference: 'Veg',
-                photoUrl: ''
-              });
-              setCreatePlayerModalOpen(true);
-            }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Player</span>
-          </button>
+          {isOrganizer ? (
+            <>
+              <button
+                onClick={onOpenImport}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Import CSV</span>
+              </button>
+              <button
+                onClick={handleExportRoster}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Roster</span>
+              </button>
+              <button
+                onClick={() => {
+                  setTeamForm({
+                    name: '',
+                    shortCode: '',
+                    city: tournament?.city || 'Mumbai',
+                    primaryColor: '#0284c7',
+                    secondaryColor: '#0f172a',
+                    ownerName: '',
+                    budgetTotal: tournament?.totalBudgetPointsPerTeam || 10000000
+                  });
+                  setCreateTeamModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Team</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPlayerForm({
+                    name: '',
+                    jerseyNumber: Math.floor(Math.random() * 99) + 1,
+                    role: 'All-Rounder',
+                    battingStyle: 'Right-hand bat',
+                    bowlingStyle: 'Right-arm medium',
+                    basePrice: 500000,
+                    soldPrice: 0,
+                    teamId: '',
+                    isCaptain: false,
+                    isOverseas: false,
+                    email: '',
+                    phone: '',
+                    city: tournament?.city || 'Mumbai',
+                    shirtSize: 'L',
+                    foodPreference: 'Veg',
+                    photoUrl: ''
+                  });
+                  setCreatePlayerModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Player</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+                🏏 Player View · Verified Squad Rosters
+              </span>
+              <button
+                onClick={handleExportRoster}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Roster</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -288,26 +307,28 @@ export const TeamsPlayersView = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setEditingTeam(team)}
-                      className="p-1 rounded hover:bg-black/20 transition-colors text-white cursor-pointer"
-                      title="Edit team"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Delete team ${team.name}? Players will return to unassigned pool.`)) {
-                          onDeleteTeam(team.id);
-                        }
-                      }}
-                      className="p-1 rounded hover:bg-black/20 transition-colors text-white/80 hover:text-white cursor-pointer"
-                      title="Delete team"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {isOrganizer && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingTeam(team)}
+                        className="p-1 rounded hover:bg-black/20 transition-colors text-white cursor-pointer"
+                        title="Edit team"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete team ${team.name}? Players will return to unassigned pool.`)) {
+                            onDeleteTeam(team.id);
+                          }
+                        }}
+                        className="p-1 rounded hover:bg-black/20 transition-colors text-white/80 hover:text-white cursor-pointer"
+                        title="Delete team"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Team Budget Bar */}
@@ -479,26 +500,28 @@ export const TeamsPlayersView = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => setEditingPlayer(player)}
-                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center cursor-pointer"
-                          aria-label="Edit Player"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Remove player ${player.name}?`)) {
-                              onDeletePlayer(player.id);
-                            }
-                          }}
-                          className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center cursor-pointer"
-                          aria-label="Delete Player"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {isOrganizer && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => setEditingPlayer(player)}
+                            className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center cursor-pointer"
+                            aria-label="Edit Player"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove player ${player.name}?`)) {
+                                onDeletePlayer(player.id);
+                              }
+                            }}
+                            className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center cursor-pointer"
+                            aria-label="Delete Player"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
@@ -556,7 +579,7 @@ export const TeamsPlayersView = ({
                     <th className="py-3 px-4">Auction Base / Sold</th>
                     <th className="py-3 px-4">Dietary</th>
                     <th className="py-3 px-4">Match Stats</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4 text-right">{isOrganizer ? 'Actions' : 'Roster Status'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -650,26 +673,32 @@ export const TeamsPlayersView = ({
                           </td>
 
                           <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => setEditingPlayer(player)}
-                                className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                                title="Edit player"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Remove player ${player.name}?`)) {
-                                    onDeletePlayer(player.id);
-                                  }
-                                }}
-                                className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Delete player"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                            {isOrganizer ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => setEditingPlayer(player)}
+                                  className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                  title="Edit player"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Remove player ${player.name}?`)) {
+                                      onDeletePlayer(player.id);
+                                    }
+                                  }}
+                                  className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Delete player"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                                Verified Athlete
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );

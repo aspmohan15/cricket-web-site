@@ -24,26 +24,40 @@ export const Sidebar = ({
   currentSection,
   onSelectSection,
   activeTournament,
+  currentUser,
   isOpenMobile,
   onCloseMobile
 }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'editions', label: 'Tournament Editions', icon: Trophy, badge: 'Multi' },
-    { id: 'teams_players', label: 'Teams & Players', icon: Users },
-    { id: 'fixtures_results', label: 'Fixtures & Results', icon: Calendar },
-    { id: 'standings', label: 'Standings & NRR', icon: ListOrdered },
-    { id: 'auction', label: 'Auction Management', icon: Gavel, badge: 'Live' },
-    { id: 'sponsorships', label: 'Sponsorships', icon: BadgePercent },
-    { id: 'expenses', label: 'Tournament Expenses', icon: Receipt },
-    { id: 'food_preferences', label: 'Food Preferences', icon: Utensils },
-    { id: 'rules_videos', label: 'Rules & Demo Videos', icon: BookOpenCheck },
-    { id: 'registrations', label: 'Registration Queue', icon: UserPlus },
-    { id: 'media_library', label: 'Media Library', icon: Image },
-    { id: 'import_history', label: 'Import History', icon: FileSpreadsheet, badge: 'CSV' },
-    { id: 'user_access', label: 'User & Access RBAC', icon: ShieldCheck },
-    { id: 'settings', label: 'Settings & Integrations', icon: Settings }
-  ];
+  const isOrganizer = currentUser?.role === 'organizer';
+
+  // Navigation tailored to active role (Organizer vs Player)
+  const navItems = isOrganizer
+    ? [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'editions', label: 'Tournament Editions', icon: Trophy, badge: 'Multi' },
+        { id: 'teams_players', label: 'Teams & Players', icon: Users },
+        { id: 'fixtures_results', label: 'Fixtures & Results', icon: Calendar },
+        { id: 'standings', label: 'Standings & NRR', icon: ListOrdered },
+        { id: 'auction', label: 'Auction Management', icon: Gavel, badge: 'Live' },
+        { id: 'sponsorships', label: 'Sponsorships', icon: BadgePercent },
+        { id: 'expenses', label: 'Tournament Expenses', icon: Receipt },
+        { id: 'food_preferences', label: 'Food Preferences', icon: Utensils },
+        { id: 'rules_videos', label: 'Rules & Demo Videos', icon: BookOpenCheck },
+        { id: 'registrations', label: 'Registration Queue', icon: UserPlus },
+        { id: 'media_library', label: 'Media Library', icon: Image },
+        { id: 'import_history', label: 'Import History', icon: FileSpreadsheet, badge: 'CSV' },
+        { id: 'user_access', label: 'User & Access RBAC', icon: ShieldCheck, badge: '2-Role' },
+        { id: 'settings', label: 'Settings & Integrations', icon: Settings }
+      ]
+    : [
+        { id: 'fixtures_results', label: 'Fixtures & Scores', icon: Calendar },
+        { id: 'standings', label: 'Points Table & NRR', icon: ListOrdered },
+        { id: 'registrations', label: 'Tournament Registration', icon: UserPlus, badge: 'Apply' },
+        { id: 'teams_players', label: 'Teams & Squads', icon: Users },
+        { id: 'auction', label: 'Auction Live Viewer', icon: Gavel, badge: 'Live' },
+        { id: 'rules_videos', label: 'Rules & Demo Videos', icon: BookOpenCheck },
+        { id: 'user_access', label: 'User & Access RBAC', icon: ShieldCheck, badge: '2-Role' }
+      ];
 
   const handleNavClick = (id) => {
     onSelectSection(id);
@@ -77,7 +91,7 @@ export const Sidebar = ({
                 Warhawks
               </span>
               <span className="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">
-                Tournament Organizer
+                Cricket Tournament
               </span>
             </div>
           </div>

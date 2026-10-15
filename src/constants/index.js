@@ -56,4 +56,5 @@ export const EXPENSE_CATEGORIES = [
   'Miscellaneous'
 ];
 
-export const USER_ROLES = ['super_admin', 'tournament_admin', 'scorer_admin', 'read_only'];
+// User Access Roles: Exactly Two Roles (Organizer & Player)
+export const USER_ROLES = ['organizer', 'player'];

@@ -119,8 +119,6 @@ export const DashboardView = ({
           {/* Official Organizer Identification Badge */}
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold mb-2.5 shadow-xs">
             <span className="text-emerald-400 font-bold">🦅 {DEFAULT_ORGANIZER_NAME}</span>
-            <span className="text-slate-400">·</span>
-            <span className="text-slate-200 font-medium">Official Tournament Organizer & Host</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-1">

@@ -19,6 +19,7 @@ export const AuctionView = ({
   tournament,
   teams,
   players,
+  currentUser,
   auctionConfig,
   auctionBids,
   onPlaceBid,
@@ -26,6 +27,7 @@ export const AuctionView = ({
   onMarkUnsold,
   onUpdateConfig
 }) => {
+  const isOrganizer = currentUser?.role === 'organizer';
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(
     auctionConfig.activePlayerId || players.find(p => p.auctionStatus === 'available')?.id || ''
@@ -198,20 +200,29 @@ export const AuctionView = ({
 
               {/* Hammer Controls */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  onClick={handleHammerSold}
-                  disabled={!leadingTeam}
-                  className="flex-1 sm:flex-none px-4 py-2.5 min-h-[42px] rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Gavel className="w-4 h-4 shrink-0" />
-                  <span>Hammer Sold</span>
-                </button>
-                <button
-                  onClick={handleMarkPassUnsold}
-                  className="flex-1 sm:flex-none px-3.5 py-2.5 min-h-[42px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-600 transition-colors cursor-pointer flex items-center justify-center text-center"
-                >
-                  Pass Unsold
-                </button>
+                {isOrganizer ? (
+                  <>
+                    <button
+                      onClick={handleHammerSold}
+                      disabled={!leadingTeam}
+                      className="flex-1 sm:flex-none px-4 py-2.5 min-h-[42px] rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Gavel className="w-4 h-4 shrink-0" />
+                      <span>Hammer Sold</span>
+                    </button>
+                    <button
+                      onClick={handleMarkPassUnsold}
+                      className="flex-1 sm:flex-none px-3.5 py-2.5 min-h-[42px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-600 transition-colors cursor-pointer flex items-center justify-center text-center"
+                    >
+                      Pass Unsold
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-3.5 py-2 rounded-lg bg-slate-800/90 text-slate-300 text-xs border border-slate-700 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Live Spectator Mode · Official Warhawks Gavel</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -231,9 +242,14 @@ export const AuctionView = ({
 
             {/* Team Bidding Paddle Action Grid */}
             <div className="mt-6">
-              <span className="text-xs font-semibold text-slate-300 block mb-2.5 uppercase tracking-wider text-[10px]">
-                Raise Paddle / Bid by Franchise (+50k / +100k):
-              </span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-semibold text-slate-300 block uppercase tracking-wider text-[10px]">
+                  {isOrganizer ? 'Raise Paddle / Bid by Franchise (+50k / +100k):' : 'Franchise Purse & Live Standing:'}
+                </span>
+                {!isOrganizer && (
+                  <span className="text-[10px] text-blue-400 font-medium">Bids registered by Warhawks Auctioneer</span>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {teams.map(team => {
@@ -265,7 +281,7 @@ export const AuctionView = ({
                         <div className="text-[10px] text-rose-400 font-semibold py-1.5 text-center bg-rose-950/30 rounded">
                           Budget Depleted
                         </div>
-                      ) : (
+                      ) : isOrganizer ? (
                         <div className="grid grid-cols-2 gap-1.5">
                           <button
                             onClick={() => handleBidClick(team, 50000)}
@@ -279,6 +295,10 @@ export const AuctionView = ({
                           >
                             +100k
                           </button>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 text-center py-1 bg-slate-900/40 rounded">
+                          {team.id === leadingTeam?.id ? 'Leading Bidder' : 'Eligible to Bid'}
                         </div>
                       )}
                     </div>

@@ -19,11 +19,13 @@ export const FixturesResultsView = ({
   matches,
   teams,
   players,
+  currentUser,
   onCreateMatch,
   onUpdateMatch,
   onDeleteMatch,
   onOpenImport
 }) => {
+  const isOrganizer = currentUser?.role === 'organizer';
   const [filterStatus, setFilterStatus] = useState('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [scoringMatch, setScoringMatch] = useState(null);
@@ -89,32 +91,40 @@ export const FixturesResultsView = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={onOpenImport}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
-            Import CricHeroes CSV
-          </button>
-          <button
-            onClick={() => {
-              setMatchForm({
-                matchNumber: matches.length + 1,
-                round: 'Group Stage',
-                teamAId: teams[0]?.id || '',
-                teamBId: teams[1]?.id || '',
-                date: new Date().toISOString().split('T')[0],
-                time: '19:30',
-                venue: tournament?.venue || 'Stadium Ground',
-                status: 'scheduled'
-              });
-              setCreateModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Schedule Match
-          </button>
+          {isOrganizer ? (
+            <>
+              <button
+                onClick={onOpenImport}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
+                <span>Import CricHeroes CSV</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMatchForm({
+                    matchNumber: matches.length + 1,
+                    round: 'Group Stage',
+                    teamAId: teams[0]?.id || '',
+                    teamBId: teams[1]?.id || '',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '19:30',
+                    venue: tournament?.venue || 'Stadium Ground',
+                    status: 'scheduled'
+                  });
+                  setCreateModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Schedule Match</span>
+              </button>
+            </>
+          ) : (
+            <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+              🏏 Player View · Live Certified Fixtures
+            </span>
+          )}
         </div>
       </div>
 
@@ -184,26 +194,30 @@ export const FixturesResultsView = ({
                       {match.status}
                     </span>
 
-                    <button
-                      onClick={() => setScoringMatch({ ...match })}
-                      className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors flex items-center justify-center cursor-pointer"
-                      title="Update scorecard"
-                      aria-label="Edit match scorecard"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Delete Match #${match.matchNumber}?`)) {
-                          onDeleteMatch(match.id);
-                        }
-                      }}
-                      className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer"
-                      title="Delete fixture"
-                      aria-label="Delete match"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {isOrganizer && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setScoringMatch({ ...match })}
+                          className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors flex items-center justify-center cursor-pointer"
+                          title="Update scorecard"
+                          aria-label="Edit match scorecard"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete Match #${match.matchNumber}?`)) {
+                              onDeleteMatch(match.id);
+                            }
+                          }}
+                          className="min-w-[32px] min-h-[32px] p-1.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer"
+                          title="Delete fixture"
+                          aria-label="Delete match"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -277,9 +291,11 @@ export const FixturesResultsView = ({
 
                   <button
                     onClick={() => setScoringMatch({ ...match })}
-                    className="text-emerald-700 font-semibold hover:underline cursor-pointer ml-auto"
+                    className={`font-semibold hover:underline cursor-pointer ml-auto ${
+                      isOrganizer ? 'text-emerald-700' : 'text-blue-700'
+                    }`}
                   >
-                    Edit Scorecard →
+                    {isOrganizer ? 'Edit Scorecard →' : 'View Full Scorecard →'}
                   </button>
                 </div>
               </div>
@@ -408,8 +424,15 @@ export const FixturesResultsView = ({
           subtitle={`${teams.find(t => t.id === scoringMatch.teamAId)?.name} vs ${teams.find(t => t.id === scoringMatch.teamBId)?.name}`}
           maxWidth="xl"
         >
+          {!isOrganizer && (
+            <div className="p-3 mb-3 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 text-xs flex items-center justify-between">
+              <span className="font-semibold">🏏 Official Match Scorecard · Verified by Warhawks Operations</span>
+              <span className="text-[10px] bg-blue-200 text-blue-800 px-2 py-0.5 rounded font-bold">Read-Only</span>
+            </div>
+          )}
           <form onSubmit={handleScorecardSubmit} className="space-y-4 text-xs">
-            <div className="grid grid-cols-2 gap-3">
+            <fieldset disabled={!isOrganizer} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Match Status</label>
                 <select
@@ -537,24 +560,27 @@ export const FixturesResultsView = ({
                 />
               </div>
             </div>
+          </fieldset>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setScoringMatch(null)}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
-              >
-                Cancel
-              </button>
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={() => setScoringMatch(null)}
+              className="px-4 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 cursor-pointer"
+            >
+              {isOrganizer ? 'Cancel' : 'Close Scorecard'}
+            </button>
+            {isOrganizer && (
               <button
                 type="submit"
                 className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer"
               >
                 Sign-off & Update Standings
               </button>
-            </div>
-          </form>
-        </Modal>
+            )}
+          </div>
+        </form>
+      </Modal>
       )}
     </div>
   );

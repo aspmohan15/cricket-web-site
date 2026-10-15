@@ -953,7 +953,7 @@ const initialImportJobs = [
     skippedRows: 0,
     status: 'completed',
     importSummary: 'Bulk imported 34 player profiles including base prices, dietary preferences, and shirt sizing.',
-    importedBy: 'Tournament Admin',
+    importedBy: 'Warhawks Organizer',
     createdAt: '2026-08-20T14:30:00Z'
   }
 ];
@@ -962,8 +962,8 @@ const initialAuditLogs = [
   {
     id: 'log-01',
     tournamentId: 'tour-ed5-2026',
-    userName: 'Super Admin',
-    userRole: 'super_admin',
+    userName: 'Vikram Sengupta',
+    userRole: 'organizer',
     action: 'MATCH_COMPLETED',
     entityType: 'Match',
     entityId: 'match-01',
@@ -973,8 +973,8 @@ const initialAuditLogs = [
   {
     id: 'log-02',
     tournamentId: 'tour-ed5-2026',
-    userName: 'Super Admin',
-    userRole: 'super_admin',
+    userName: 'Vikram Sengupta',
+    userRole: 'organizer',
     action: 'AUCTION_BID_CONFIRMED',
     entityType: 'AuctionBid',
     entityId: 'ply-rohit-k',
@@ -984,8 +984,8 @@ const initialAuditLogs = [
   {
     id: 'log-03',
     tournamentId: 'tour-ed5-2026',
-    userName: 'Tournament Admin',
-    userRole: 'tournament_admin',
+    userName: 'Priya Nambiar',
+    userRole: 'organizer',
     action: 'EXPENSE_RECORDED',
     entityType: 'Expense',
     entityId: 'exp-03',
@@ -999,7 +999,7 @@ const initialUsers = [
     id: 'usr-01',
     name: 'Vikram Sengupta',
     email: 'operations@warhawks.org',
-    role: 'super_admin',
+    role: 'organizer',
     avatarUrl: '',
     assignedTournaments: ['*']
   },
@@ -1007,25 +1007,25 @@ const initialUsers = [
     id: 'usr-02',
     name: 'Priya Nambiar',
     email: 'tournaments@warhawks.org',
-    role: 'tournament_admin',
+    role: 'organizer',
     avatarUrl: '',
     assignedTournaments: ['tour-ed5-2026', 'tour-ed6-2027']
   },
   {
     id: 'usr-03',
     name: 'Rohan Sharma',
-    email: 'scoring@warhawks.org',
-    role: 'scorer_admin',
+    email: 'rohan.sharma@crickethq.local',
+    role: 'player',
     avatarUrl: '',
     assignedTournaments: ['tour-ed5-2026']
   },
   {
     id: 'usr-04',
-    name: 'Guest Auditor',
-    email: 'auditor@cricketcouncil.org',
-    role: 'read_only',
+    name: 'Mitchell Starc',
+    email: 'mitchell.s@crickethq.local',
+    role: 'player',
     avatarUrl: '',
-    assignedTournaments: ['*']
+    assignedTournaments: ['tour-ed5-2026']
   }
 ];
 
@@ -1069,8 +1069,33 @@ class TournamentDatabase {
           parsed.settings.organizerName = parsed.settings.organizerName || DEFAULT_ORGANIZER_NAME;
           parsed.settings.organizerRole = parsed.settings.organizerRole || 'Official Tournament Organizer & Host';
           parsed.settings.organizerBranch = parsed.settings.organizerBranch || ORGANIZER_DETAILS.branch;
-          parsed.settings.organizerEmail = parsed.settings.organizerEmail || ORGANIZER_DETAILS.contactEmail;
         }
+
+        // Two-Role RBAC Migration: Ensure active users are mapped strictly to 'organizer' or 'player'
+        if (parsed.users && Array.isArray(parsed.users)) {
+          parsed.users = parsed.users.map(u => {
+            let role = u.role;
+            if (role === 'super_admin' || role === 'tournament_admin' || role === 'organizer') {
+              role = 'organizer';
+            } else {
+              role = 'player';
+            }
+            return {
+              ...u,
+              role
+            };
+          });
+        } else {
+          parsed.users = initialUsers;
+        }
+
+        if (parsed.auditLogs && Array.isArray(parsed.auditLogs)) {
+          parsed.auditLogs = parsed.auditLogs.map(log => ({
+            ...log,
+            userRole: (log.userRole === 'super_admin' || log.userRole === 'tournament_admin' || log.userRole === 'organizer') ? 'organizer' : 'player'
+          }));
+        }
+
         return parsed;
       }
     } catch {
@@ -1187,7 +1212,7 @@ class TournamentDatabase {
     };
     this.schema.tournaments.unshift(newTournament);
     this.saveToStorage();
-    this.logAction(newTournament.id, 'Super Admin', 'super_admin', 'CREATE_TOURNAMENT', 'Tournament', newTournament.id, `Created edition: ${newTournament.name} (Organizer: ${newTournament.organizer})`);
+    this.logAction(newTournament.id, 'Warhawks Organizer', 'organizer', 'CREATE_TOURNAMENT', 'Tournament', newTournament.id, `Created edition: ${newTournament.name} (Organizer: ${newTournament.organizer})`);
     return newTournament;
   }
 
@@ -1200,7 +1225,7 @@ class TournamentDatabase {
       updatedAt: new Date().toISOString()
     };
     this.saveToStorage();
-    this.logAction(id, 'Super Admin', 'super_admin', 'UPDATE_TOURNAMENT', 'Tournament', id, `Updated tournament details for ${this.schema.tournaments[idx].name}`);
+    this.logAction(id, 'Warhawks Organizer', 'organizer', 'UPDATE_TOURNAMENT', 'Tournament', id, `Updated tournament details for ${this.schema.tournaments[idx].name}`);
     return this.schema.tournaments[idx];
   }
 
@@ -1221,7 +1246,7 @@ class TournamentDatabase {
     };
     this.schema.teams.push(newTeam);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'CREATE_TEAM', 'Team', newTeam.id, `Created franchise team: ${newTeam.name} (${newTeam.shortCode})`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_TEAM', 'Team', newTeam.id, `Created franchise team: ${newTeam.name} (${newTeam.shortCode})`);
     return newTeam;
   }
 
@@ -1239,7 +1264,7 @@ class TournamentDatabase {
     this.schema.teams = this.schema.teams.filter(t => t.id !== id);
     this.schema.players = this.schema.players.map(p => p.teamId === id ? { ...p, teamId: undefined, auctionStatus: 'available' } : p);
     this.saveToStorage();
-    this.logAction(team.tournamentId, 'Super Admin', 'super_admin', 'DELETE_TEAM', 'Team', id, `Deleted team ${team.name}`);
+    this.logAction(team.tournamentId, 'Warhawks Organizer', 'organizer', 'DELETE_TEAM', 'Team', id, `Deleted team ${team.name}`);
   }
 
   // Players
@@ -1261,7 +1286,7 @@ class TournamentDatabase {
     this.schema.players.push(newPlayer);
     this.syncTeamSquadCount(data.tournamentId);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'CREATE_PLAYER', 'Player', newPlayer.id, `Added player profile: ${newPlayer.name} (${newPlayer.role})`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_PLAYER', 'Player', newPlayer.id, `Added player profile: ${newPlayer.name} (${newPlayer.role})`);
     return newPlayer;
   }
 
@@ -1281,7 +1306,7 @@ class TournamentDatabase {
     this.schema.players = this.schema.players.filter(p => p.id !== id);
     this.syncTeamSquadCount(player.tournamentId);
     this.saveToStorage();
-    this.logAction(player.tournamentId, 'Tournament Admin', 'tournament_admin', 'DELETE_PLAYER', 'Player', id, `Deleted player: ${player.name}`);
+    this.logAction(player.tournamentId, 'Warhawks Organizer', 'organizer', 'DELETE_PLAYER', 'Player', id, `Deleted player: ${player.name}`);
   }
 
   syncTeamSquadCount(tournamentId) {
@@ -1310,7 +1335,7 @@ class TournamentDatabase {
     };
     this.schema.matches.push(newMatch);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'CREATE_MATCH', 'Match', newMatch.id, `Scheduled Match #${newMatch.matchNumber}`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_MATCH', 'Match', newMatch.id, `Scheduled Match #${newMatch.matchNumber}`);
     return newMatch;
   }
 
@@ -1319,7 +1344,7 @@ class TournamentDatabase {
     if (idx === -1) throw new Error('Match not found');
     this.schema.matches[idx] = { ...this.schema.matches[idx], ...updates };
     this.saveToStorage();
-    this.logAction(this.schema.matches[idx].tournamentId, 'Scorer Admin', 'scorer_admin', 'UPDATE_MATCH', 'Match', id, `Updated match scorecard/result for Match #${this.schema.matches[idx].matchNumber}`);
+    this.logAction(this.schema.matches[idx].tournamentId, 'Warhawks Organizer', 'organizer', 'UPDATE_MATCH', 'Match', id, `Updated match scorecard/result for Match #${this.schema.matches[idx].matchNumber}`);
     return this.schema.matches[idx];
   }
 
@@ -1462,7 +1487,7 @@ class TournamentDatabase {
     this.schema.auctionConfigs[tournamentId] = config;
 
     this.saveToStorage();
-    this.logAction(tournamentId, 'Auctioneer', 'tournament_admin', 'AUCTION_BID', 'Player', playerId, `${team.name} raised bid to ${amount.toLocaleString()} Pts on ${player.name}`);
+    this.logAction(tournamentId, 'Warhawks Auctioneer', 'organizer', 'AUCTION_BID', 'Player', playerId, `${team.name} raised bid to ${amount.toLocaleString()} Pts on ${player.name}`);
     return { success: true, message: `Bid of ${amount.toLocaleString()} Pts registered for ${team.name}!` };
   }
 
@@ -1482,7 +1507,7 @@ class TournamentDatabase {
     config.currentHighestBid = 0;
 
     this.saveToStorage();
-    this.logAction(tournamentId, 'Super Admin', 'super_admin', 'PLAYER_SOLD', 'Player', playerId, `SOLD: ${player.name} to ${team.name} for ${finalAmount.toLocaleString()} Pts`);
+    this.logAction(tournamentId, 'Warhawks Organizer', 'organizer', 'PLAYER_SOLD', 'Player', playerId, `SOLD: ${player.name} to ${team.name} for ${finalAmount.toLocaleString()} Pts`);
   }
 
   markPlayerUnsold(tournamentId, playerId) {
@@ -1495,7 +1520,7 @@ class TournamentDatabase {
     config.currentLeadingTeamId = undefined;
     config.currentHighestBid = 0;
     this.saveToStorage();
-    this.logAction(tournamentId, 'Super Admin', 'super_admin', 'PLAYER_UNSOLD', 'Player', playerId, `${player.name} passed unsold.`);
+    this.logAction(tournamentId, 'Warhawks Organizer', 'organizer', 'PLAYER_UNSOLD', 'Player', playerId, `${player.name} passed unsold.`);
   }
 
   getAuctionBids(tournamentId) {
@@ -1515,7 +1540,7 @@ class TournamentDatabase {
     };
     this.schema.sponsors.push(newSponsor);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'CREATE_SPONSOR', 'Sponsor', newSponsor.id, `Added sponsor: ${newSponsor.name} (${newSponsor.tier})`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_SPONSOR', 'Sponsor', newSponsor.id, `Added sponsor: ${newSponsor.name} (${newSponsor.tier})`);
     return newSponsor;
   }
 
@@ -1547,7 +1572,7 @@ class TournamentDatabase {
     };
     this.schema.expenses.unshift(newExpense);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'CREATE_EXPENSE', 'Expense', newExpense.id, `Recorded expense of ₹${newExpense.amount.toLocaleString()} for ${newExpense.title}`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_EXPENSE', 'Expense', newExpense.id, `Recorded expense of ₹${newExpense.amount.toLocaleString()} for ${newExpense.title}`);
     return newExpense;
   }
 
@@ -1612,9 +1637,82 @@ class TournamentDatabase {
     this.saveToStorage();
   }
 
-  // Registration Queue
+  // Registration Queue & Self-Service Portal
   getRegistrations(tournamentId) {
     return this.schema.registrations.filter(r => r.tournamentId === tournamentId);
+  }
+
+  createRegistration(data) {
+    const tournament = this.getTournament(data.tournamentId);
+    if (!tournament) {
+      throw new Error('Tournament not found');
+    }
+    if (!tournament.registrationOpen) {
+      throw new Error('Tournament registration portal is closed for this edition.');
+    }
+
+    const existing = this.schema.registrations.find(
+      r => r.tournamentId === data.tournamentId && r.email?.toLowerCase() === data.email?.toLowerCase()
+    );
+    if (existing) {
+      throw new Error('A registration application with this email already exists for this edition.');
+    }
+
+    const newReg = {
+      id: `reg-${Date.now().toString(36)}`,
+      tournamentId: data.tournamentId,
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone || '+91 98000 00000',
+      age: parseInt(data.age, 10) || 24,
+      city: data.city || tournament.city,
+      primaryRole: data.primaryRole || 'All-Rounder',
+      battingStyle: data.battingStyle || 'Right-hand bat',
+      bowlingStyle: data.bowlingStyle || 'Right-arm medium',
+      preferredJerseyNo: parseInt(data.preferredJerseyNo, 10) || 18,
+      shirtSize: data.shirtSize || 'L',
+      foodPreference: data.foodPreference || 'Veg',
+      approvalStatus: 'pending',
+      paymentStatus: 'pending',
+      applicationDate: new Date().toISOString(),
+      reviewNotes: 'Application pending review by Warhawks Tournament Operations'
+    };
+
+    this.schema.registrations.unshift(newReg);
+    this.saveToStorage();
+    this.logAction(
+      data.tournamentId,
+      data.fullName || 'Player Applicant',
+      'player',
+      'PLAYER_REGISTERED',
+      'Registration',
+      newReg.id,
+      `Player registration submitted by ${newReg.fullName} (${newReg.primaryRole})`
+    );
+    return newReg;
+  }
+
+  cancelRegistration(id, userEmail) {
+    const reg = this.schema.registrations.find(r => r.id === id);
+    if (!reg) throw new Error('Registration record not found');
+    if (userEmail && reg.email?.toLowerCase() !== userEmail.toLowerCase()) {
+      throw new Error('Unauthorized: You can only cancel your own registration application.');
+    }
+    if (reg.approvalStatus !== 'pending') {
+      throw new Error('Cannot cancel an application that has already been approved or processed.');
+    }
+    this.schema.registrations = this.schema.registrations.filter(r => r.id !== id);
+    this.saveToStorage();
+    this.logAction(
+      reg.tournamentId,
+      reg.fullName,
+      'player',
+      'REGISTRATION_CANCELLED',
+      'Registration',
+      id,
+      `Registration application cancelled by player ${reg.fullName}`
+    );
+    return { success: true, message: 'Application cancelled successfully.' };
   }
 
   updateRegistrationStatus(id, approvalStatus, reviewNotes) {
@@ -1622,7 +1720,7 @@ class TournamentDatabase {
     if (!reg) return;
     reg.approvalStatus = approvalStatus;
     if (reviewNotes) reg.reviewNotes = reviewNotes;
-    reg.reviewedBy = 'Super Admin';
+    reg.reviewedBy = 'Warhawks Organizer';
 
     if (approvalStatus === 'approved') {
       const exists = this.schema.players.find(p => p.email === reg.email && p.tournamentId === reg.tournamentId);
@@ -1656,7 +1754,7 @@ class TournamentDatabase {
       }
     }
     this.saveToStorage();
-    this.logAction(reg.tournamentId, 'Super Admin', 'super_admin', 'REGISTRATION_STATUS_UPDATE', 'Registration', id, `Updated ${reg.fullName} application to ${approvalStatus}`);
+    this.logAction(reg.tournamentId, 'Warhawks Organizer', 'organizer', 'REGISTRATION_STATUS_UPDATE', 'Registration', id, `Updated ${reg.fullName} application to ${approvalStatus}`);
   }
 
   // Media Library
@@ -1672,7 +1770,7 @@ class TournamentDatabase {
     };
     this.schema.mediaAssets.unshift(asset);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Tournament Admin', 'tournament_admin', 'UPLOAD_MEDIA', 'MediaAsset', asset.id, `Uploaded ${asset.title} (${asset.category})`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'UPLOAD_MEDIA', 'MediaAsset', asset.id, `Uploaded ${asset.title} (${asset.category})`);
     return asset;
   }
 
@@ -1694,7 +1792,7 @@ class TournamentDatabase {
     };
     this.schema.importJobs.unshift(newJob);
     this.saveToStorage();
-    this.logAction(job.tournamentId, job.importedBy, 'super_admin', 'IMPORT_DATA', 'ImportJob', newJob.id, `Imported ${job.importedRows} records from ${job.fileName}`);
+    this.logAction(job.tournamentId, job.importedBy || 'Warhawks Organizer', 'organizer', 'IMPORT_DATA', 'ImportJob', newJob.id, `Imported ${job.importedRows} records from ${job.fileName}`);
     return newJob;
   }
 
@@ -1719,6 +1817,28 @@ class TournamentDatabase {
     if (this.schema.auditLogs.length > 200) {
       this.schema.auditLogs = this.schema.auditLogs.slice(0, 200);
     }
+  }
+
+  // Centralized Two-Role RBAC Authorization Guard
+  assertOrganizer(userRole) {
+    if (userRole && userRole !== 'organizer') {
+      throw new Error('Access Denied: Operational action restricted to Warhawks Organizer role.');
+    }
+  }
+
+  // Register New User - strictly defaults to 'player' role
+  registerUser(userData) {
+    const newUser = {
+      id: `usr-${Date.now().toString(36)}`,
+      name: userData.name || 'Tournament Athlete',
+      email: userData.email,
+      role: 'player', // Ordinary users are strictly assigned 'player' by default
+      avatarUrl: userData.avatarUrl || '',
+      assignedTournaments: userData.tournamentId ? [userData.tournamentId] : []
+    };
+    this.schema.users.push(newUser);
+    this.saveToStorage();
+    return newUser;
   }
 
   getUsers() {

@@ -15,10 +15,12 @@ import { Modal } from '../common/Modal';
 export const RulesVideosView = ({
   tournament,
   rules,
+  currentUser,
   onCreateRule,
   onUpdateRule,
   onDeleteRule
 }) => {
+  const isOrganizer = currentUser?.role === 'organizer';
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [videoPlayUrl, setVideoPlayUrl] = useState(null);
@@ -55,22 +57,28 @@ export const RulesVideosView = ({
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setForm({
-              title: '',
-              category: 'Match Playing Conditions',
-              content: '',
-              videoUrl: '',
-              isPublished: true
-            });
-            setCreateModalOpen(true);
-          }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Rule Article
-        </button>
+        {isOrganizer ? (
+          <button
+            onClick={() => {
+              setForm({
+                title: '',
+                category: 'Match Playing Conditions',
+                content: '',
+                videoUrl: '',
+                isPublished: true
+              });
+              setCreateModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Rule Article
+          </button>
+        ) : (
+          <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+            🏏 Official Rules Sanctioned by Warhawks
+          </span>
+        )}
       </div>
 
       {/* Rules Grid */}
@@ -89,26 +97,28 @@ export const RulesVideosView = ({
                   <h3 className="font-bold text-base text-slate-900 mt-2">{rule.title}</h3>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setEditingRule(rule)}
-                    className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                    title="Edit rule"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete rule "${rule.title}"?`)) {
-                        onDeleteRule(rule.id);
-                      }
-                    }}
-                    className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Delete rule"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {isOrganizer && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => setEditingRule(rule)}
+                      className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Edit rule"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete rule "${rule.title}"?`)) {
+                          onDeleteRule(rule.id);
+                        }
+                      }}
+                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Delete rule"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <p className="mt-3 text-xs text-slate-600 leading-relaxed">

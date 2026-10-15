@@ -100,7 +100,19 @@ export default function App() {
       role
     };
     setCurrentUser(u);
-    showToast(`Session authority updated: ${role.replace('_', ' ').toUpperCase()}`, 'info');
+    const playerAllowedSections = [
+      'fixtures_results',
+      'standings',
+      'registrations',
+      'teams_players',
+      'auction',
+      'rules_videos',
+      'user_access'
+    ];
+    if (role === 'player' && !playerAllowedSections.includes(currentSection)) {
+      setCurrentSection('fixtures_results');
+    }
+    showToast(`Session authority updated: ${role.toUpperCase()}`, 'info');
   };
 
   // Quick Action Handler from Topbar
@@ -113,6 +125,34 @@ export default function App() {
       setCurrentSection('expenses');
     } else if (action === 'import_cricheroes') {
       setCurrentSection('import_history');
+    } else if (action === 'register_tournament') {
+      setCurrentSection('registrations');
+    } else if (action === 'view_fixtures') {
+      setCurrentSection('fixtures_results');
+    } else if (action === 'view_standings') {
+      setCurrentSection('standings');
+    }
+  };
+
+  // Player Self-Service Registration
+  const handlePlayerRegister = (data) => {
+    try {
+      const newReg = db.createRegistration(data);
+      refreshTournamentData(activeTournamentId);
+      showToast('Registration application submitted to Warhawks Operations!', 'success');
+      return newReg;
+    } catch (err) {
+      showToast(err.message || 'Registration failed', 'error');
+    }
+  };
+
+  const handleCancelRegistration = (regId) => {
+    try {
+      db.cancelRegistration(regId, currentUser?.email);
+      refreshTournamentData(activeTournamentId);
+      showToast('Registration application cancelled.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Cancellation failed', 'error');
     }
   };
 
@@ -360,6 +400,7 @@ export default function App() {
         currentSection={currentSection}
         onSelectSection={setCurrentSection}
         activeTournament={activeTournament}
+        currentUser={currentUser}
         isOpenMobile={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
@@ -380,173 +421,212 @@ export default function App() {
 
         {/* Viewport Content Canvas */}
         <main className="flex-1 px-3 py-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
-          {currentSection === 'dashboard' && (
-            <DashboardView
-              tournament={activeTournament}
-              teams={teams}
-              players={players}
-              matches={matches}
-              sponsors={sponsors}
-              expenses={expenses}
-              auditLogs={auditLogs}
-              registrations={registrations}
-              onNavigate={setCurrentSection}
-              onQuickAction={handleQuickAction}
-            />
-          )}
+          {currentUser.role === 'player' &&
+          !['fixtures_results', 'standings', 'registrations', 'teams_players', 'auction', 'rules_videos', 'user_access'].includes(currentSection) ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto shadow-xs my-8">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+                🔒
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Warhawks Organizer Privilege Required</h2>
+              <p className="text-xs text-slate-600 leading-relaxed mb-6">
+                This administrative console is restricted to the tournament host (<strong>Warhawks</strong>).
+                As a registered <strong>Player</strong>, you have access to official match schedules, live scores, points standings, franchise squad rosters, live auction stream, and self-service tournament registration.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => setCurrentSection('fixtures_results')}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                >
+                  View Fixtures & Live Scores
+                </button>
+                <button
+                  onClick={() => setCurrentSection('registrations')}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Go to Registration Portal
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {currentSection === 'dashboard' && (
+                <DashboardView
+                  tournament={activeTournament}
+                  teams={teams}
+                  players={players}
+                  matches={matches}
+                  sponsors={sponsors}
+                  expenses={expenses}
+                  auditLogs={auditLogs}
+                  registrations={registrations}
+                  onNavigate={setCurrentSection}
+                  onQuickAction={handleQuickAction}
+                />
+              )}
 
-          {currentSection === 'editions' && (
-            <EditionsView
-              tournaments={tournaments}
-              activeTournamentId={activeTournamentId}
-              teams={teams}
-              onSelectEdition={handleSelectEdition}
-              onCreateEdition={handleCreateTournament}
-              onUpdateEdition={handleUpdateTournament}
-            />
-          )}
+              {currentSection === 'editions' && (
+                <EditionsView
+                  tournaments={tournaments}
+                  activeTournamentId={activeTournamentId}
+                  teams={teams}
+                  currentUser={currentUser}
+                  onSelectEdition={handleSelectEdition}
+                  onCreateEdition={handleCreateTournament}
+                  onUpdateEdition={handleUpdateTournament}
+                />
+              )}
 
-          {currentSection === 'teams_players' && (
-            <TeamsPlayersView
-              tournament={activeTournament}
-              teams={teams}
-              players={players}
-              onCreateTeam={handleCreateTeam}
-              onUpdateTeam={handleUpdateTeam}
-              onDeleteTeam={handleDeleteTeam}
-              onCreatePlayer={handleCreatePlayer}
-              onUpdatePlayer={handleUpdatePlayer}
-              onDeletePlayer={handleDeletePlayer}
-              onOpenImport={() => setCurrentSection('import_history')}
-            />
-          )}
+              {currentSection === 'teams_players' && (
+                <TeamsPlayersView
+                  tournament={activeTournament}
+                  teams={teams}
+                  players={players}
+                  currentUser={currentUser}
+                  onCreateTeam={handleCreateTeam}
+                  onUpdateTeam={handleUpdateTeam}
+                  onDeleteTeam={handleDeleteTeam}
+                  onCreatePlayer={handleCreatePlayer}
+                  onUpdatePlayer={handleUpdatePlayer}
+                  onDeletePlayer={handleDeletePlayer}
+                  onOpenImport={() => setCurrentSection('import_history')}
+                />
+              )}
 
-          {currentSection === 'fixtures_results' && (
-            <FixturesResultsView
-              tournament={activeTournament}
-              matches={matches}
-              teams={teams}
-              players={players}
-              onCreateMatch={handleCreateMatch}
-              onUpdateMatch={handleUpdateMatch}
-              onDeleteMatch={handleDeleteMatch}
-              onOpenImport={() => setCurrentSection('import_history')}
-            />
-          )}
+              {currentSection === 'fixtures_results' && (
+                <FixturesResultsView
+                  tournament={activeTournament}
+                  matches={matches}
+                  teams={teams}
+                  players={players}
+                  currentUser={currentUser}
+                  onCreateMatch={handleCreateMatch}
+                  onUpdateMatch={handleUpdateMatch}
+                  onDeleteMatch={handleDeleteMatch}
+                  onOpenImport={() => setCurrentSection('import_history')}
+                />
+              )}
 
-          {currentSection === 'standings' && (
-            <StandingsView
-              tournament={activeTournament}
-              standings={standings}
-              teams={teams}
-            />
-          )}
+              {currentSection === 'standings' && (
+                <StandingsView
+                  tournament={activeTournament}
+                  standings={standings}
+                  teams={teams}
+                  currentUser={currentUser}
+                />
+              )}
 
-          {currentSection === 'auction' && (
-            <AuctionView
-              tournament={activeTournament}
-              teams={teams}
-              players={players}
-              auctionConfig={auctionConfig}
-              auctionBids={db.getAuctionBids(activeTournamentId)}
-              onPlaceBid={handlePlaceBid}
-              onFinalizeSale={handleFinalizeSale}
-              onMarkUnsold={handleMarkUnsold}
-              onUpdateConfig={updates => {
-                db.updateAuctionConfig(activeTournamentId, updates);
-                refreshTournamentData(activeTournamentId);
-              }}
-            />
-          )}
+              {currentSection === 'auction' && (
+                <AuctionView
+                  tournament={activeTournament}
+                  teams={teams}
+                  players={players}
+                  currentUser={currentUser}
+                  auctionConfig={auctionConfig}
+                  auctionBids={db.getAuctionBids(activeTournamentId)}
+                  onPlaceBid={handlePlaceBid}
+                  onFinalizeSale={handleFinalizeSale}
+                  onMarkUnsold={handleMarkUnsold}
+                  onUpdateConfig={updates => {
+                    db.updateAuctionConfig(activeTournamentId, updates);
+                    refreshTournamentData(activeTournamentId);
+                  }}
+                />
+              )}
 
-          {currentSection === 'sponsorships' && (
-            <SponsorshipView
-              tournament={activeTournament}
-              sponsors={sponsors}
-              onCreateSponsor={handleCreateSponsor}
-              onUpdateSponsor={handleUpdateSponsor}
-              onDeleteSponsor={handleDeleteSponsor}
-            />
-          )}
+              {currentSection === 'sponsorships' && (
+                <SponsorshipView
+                  tournament={activeTournament}
+                  sponsors={sponsors}
+                  onCreateSponsor={handleCreateSponsor}
+                  onUpdateSponsor={handleUpdateSponsor}
+                  onDeleteSponsor={handleDeleteSponsor}
+                />
+              )}
 
-          {currentSection === 'expenses' && (
-            <ExpensesView
-              tournament={activeTournament}
-              expenses={expenses}
-              onCreateExpense={handleCreateExpense}
-              onDeleteExpense={handleDeleteExpense}
-            />
-          )}
+              {currentSection === 'expenses' && (
+                <ExpensesView
+                  tournament={activeTournament}
+                  expenses={expenses}
+                  onCreateExpense={handleCreateExpense}
+                  onDeleteExpense={handleDeleteExpense}
+                />
+              )}
 
-          {currentSection === 'food_preferences' && (
-            <FoodPreferencesView
-              tournament={activeTournament}
-              foodOrders={foodOrders}
-              teams={teams}
-              players={players}
-              onCreateFoodOrder={handleCreateFoodOrder}
-              onUpdateOrderStatus={handleUpdateFoodStatus}
-            />
-          )}
+              {currentSection === 'food_preferences' && (
+                <FoodPreferencesView
+                  tournament={activeTournament}
+                  foodOrders={foodOrders}
+                  teams={teams}
+                  players={players}
+                  onCreateFoodOrder={handleCreateFoodOrder}
+                  onUpdateOrderStatus={handleUpdateFoodStatus}
+                />
+              )}
 
-          {currentSection === 'rules_videos' && (
-            <RulesVideosView
-              tournament={activeTournament}
-              rules={rules}
-              onCreateRule={handleCreateRule}
-              onUpdateRule={handleUpdateRule}
-              onDeleteRule={handleDeleteRule}
-            />
-          )}
+              {currentSection === 'rules_videos' && (
+                <RulesVideosView
+                  tournament={activeTournament}
+                  rules={rules}
+                  currentUser={currentUser}
+                  onCreateRule={handleCreateRule}
+                  onUpdateRule={handleUpdateRule}
+                  onDeleteRule={handleDeleteRule}
+                />
+              )}
 
-          {currentSection === 'registrations' && (
-            <RegistrationView
-              tournament={activeTournament}
-              registrations={registrations}
-              onToggleRegistration={handleToggleRegistration}
-              onUpdateRegistrationDates={handleUpdateRegistrationDates}
-              onUpdateStatus={handleUpdateRegistrationStatus}
-            />
-          )}
+              {currentSection === 'registrations' && (
+                <RegistrationView
+                  tournament={activeTournament}
+                  registrations={registrations}
+                  currentUser={currentUser}
+                  onToggleRegistration={handleToggleRegistration}
+                  onUpdateRegistrationDates={handleUpdateRegistrationDates}
+                  onUpdateStatus={handleUpdateRegistrationStatus}
+                  onPlayerRegister={handlePlayerRegister}
+                  onCancelRegistration={handleCancelRegistration}
+                />
+              )}
 
-          {currentSection === 'media_library' && (
-            <MediaLibraryView
-              tournament={activeTournament}
-              mediaAssets={mediaAssets}
-              onAddMediaAsset={handleAddMedia}
-              onDeleteMediaAsset={handleDeleteMedia}
-            />
-          )}
+              {currentSection === 'media_library' && (
+                <MediaLibraryView
+                  tournament={activeTournament}
+                  mediaAssets={mediaAssets}
+                  onAddMediaAsset={handleAddMedia}
+                  onDeleteMediaAsset={handleDeleteMedia}
+                />
+              )}
 
-          {currentSection === 'import_history' && (
-            <ImportHistoryView
-              tournament={activeTournament}
-              importJobs={importJobs}
-              onImportMatches={handleImportMatches}
-              onImportPlayers={handleImportPlayers}
-            />
-          )}
+              {currentSection === 'import_history' && (
+                <ImportHistoryView
+                  tournament={activeTournament}
+                  importJobs={importJobs}
+                  onImportMatches={handleImportMatches}
+                  onImportPlayers={handleImportPlayers}
+                />
+              )}
 
-          {currentSection === 'user_access' && (
-            <UserAccessView
-              tournament={activeTournament}
-              users={db.getUsers()}
-              currentUser={currentUser}
-              onSwitchRole={handleSwitchRole}
-            />
-          )}
+              {currentSection === 'user_access' && (
+                <UserAccessView
+                  tournament={activeTournament}
+                  users={db.getUsers()}
+                  currentUser={currentUser}
+                  onSwitchRole={handleSwitchRole}
+                />
+              )}
 
-          {currentSection === 'settings' && (
-            <SettingsView
-              settings={settings}
-              tournament={activeTournament}
-              onUpdateSettings={updates => {
-                db.updateSettings(updates);
-                setSettings(db.getSettings());
-              }}
-              onResetDatabase={handleResetDatabase}
-              onShowToast={showToast}
-            />
+              {currentSection === 'settings' && (
+                <SettingsView
+                  settings={settings}
+                  tournament={activeTournament}
+                  onUpdateSettings={updates => {
+                    db.updateSettings(updates);
+                    setSettings(db.getSettings());
+                  }}
+                  onResetDatabase={handleResetDatabase}
+                  onShowToast={showToast}
+                />
+              )}
+            </>
           )}
         </main>
 
