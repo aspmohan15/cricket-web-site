@@ -1,5 +1,7 @@
 // Warhawks Tournament Database Service (JavaScript)
 import { DEFAULT_ORGANIZER_NAME, ORGANIZER_DETAILS } from '../constants';
+import { isSupabaseConfigured, getSupabaseClient, updateSupabaseConfig } from './supabase';
+import { supabaseDb } from './supabaseDb';
 
 const STORAGE_KEY = 'warhawks_admin_db_v1';
 const LEGACY_STORAGE_KEY = 'pavilionhq_admin_db_v1';
@@ -1153,6 +1155,7 @@ const initialSettings = {
 class TournamentDatabase {
   constructor() {
     this.schema = this.loadFromStorage();
+    this.initSupabaseSync();
   }
 
   loadFromStorage() {
@@ -1272,6 +1275,59 @@ class TournamentDatabase {
     }
   }
 
+  // Supabase Synchronization & Hybrid Storage Engine
+  async initSupabaseSync() {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const remoteTournaments = await supabaseDb.getTournaments();
+      if (remoteTournaments && remoteTournaments.length > 0) {
+        const existingIds = new Set(remoteTournaments.map(t => t.id));
+        const localOnly = (this.schema.tournaments || []).filter(t => !existingIds.has(t.id));
+        this.schema.tournaments = [...remoteTournaments, ...localOnly];
+        this.saveToStorage();
+      }
+    } catch (err) {
+      console.info('Supabase background sync notice:', err.message);
+    }
+  }
+
+  async syncTournamentData(tournamentId) {
+    if (!isSupabaseConfigured() || !tournamentId) return;
+    try {
+      const [remoteTournaments, remoteSponsors, remoteRegistrations] = await Promise.all([
+        supabaseDb.getTournaments().catch(() => null),
+        supabaseDb.getSponsors(tournamentId).catch(() => null),
+        supabaseDb.getRegistrations(tournamentId).catch(() => null)
+      ]);
+
+      if (remoteTournaments && remoteTournaments.length > 0) {
+        this.schema.tournaments = remoteTournaments;
+      }
+      if (remoteSponsors && remoteSponsors.length > 0) {
+        const others = this.schema.sponsors.filter(s => s.tournamentId !== tournamentId);
+        this.schema.sponsors = [...others, ...remoteSponsors];
+      }
+      if (remoteRegistrations && remoteRegistrations.length > 0) {
+        const others = this.schema.registrations.filter(r => r.tournamentId !== tournamentId);
+        this.schema.registrations = [...others, ...remoteRegistrations];
+      }
+      this.saveToStorage();
+    } catch (err) {
+      console.warn('Supabase sync error:', err.message);
+    }
+  }
+
+  async seedSupabaseDatabase() {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase project URL and Anon Key must be configured first in Project Settings.');
+    }
+    return await supabaseDb.seedSupabaseFromLocal(this.schema);
+  }
+
+  isSupabaseActive() {
+    return isSupabaseConfigured();
+  }
+
   getInitialSchema() {
     return {
       tournaments: initialTournaments,
@@ -1373,6 +1429,11 @@ class TournamentDatabase {
     this.schema.tournaments.unshift(newTournament);
     this.saveToStorage();
     this.logAction(newTournament.id, 'Warhawks Organizer', 'organizer', 'CREATE_TOURNAMENT', 'Tournament', newTournament.id, `Created edition: ${newTournament.name} (Organizer: ${newTournament.organizer})`);
+
+    if (isSupabaseConfigured()) {
+      supabaseDb.createTournament(newTournament).catch(err => console.warn('Supabase createTournament async warning:', err.message));
+    }
+
     return newTournament;
   }
 
@@ -1386,6 +1447,11 @@ class TournamentDatabase {
     };
     this.saveToStorage();
     this.logAction(id, 'Warhawks Organizer', 'organizer', 'UPDATE_TOURNAMENT', 'Tournament', id, `Updated tournament details for ${this.schema.tournaments[idx].name}`);
+
+    if (isSupabaseConfigured()) {
+      supabaseDb.updateTournament(id, updates).catch(err => console.warn('Supabase updateTournament async warning:', err.message));
+    }
+
     return this.schema.tournaments[idx];
   }
 
@@ -1700,7 +1766,12 @@ class TournamentDatabase {
     };
     this.schema.sponsors.push(newSponsor);
     this.saveToStorage();
-    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_SPONSOR', 'Sponsor', newSponsor.id, `Added sponsor: ${newSponsor.name} (${newSponsor.tier})`);
+    this.logAction(data.tournamentId, 'Warhawks Organizer', 'organizer', 'CREATE_SPONSOR', 'Sponsor', newSponsor.id, `Added sponsor: ${newSponsor.name} (${newSponsor.tier || 'Sponsor'})`);
+
+    if (isSupabaseConfigured()) {
+      supabaseDb.createSponsor(newSponsor).catch(err => console.warn('Supabase createSponsor async warning:', err.message));
+    }
+
     return newSponsor;
   }
 
@@ -1709,6 +1780,11 @@ class TournamentDatabase {
     if (idx === -1) throw new Error('Sponsor not found');
     this.schema.sponsors[idx] = { ...this.schema.sponsors[idx], ...updates };
     this.saveToStorage();
+
+    if (isSupabaseConfigured()) {
+      supabaseDb.updateSponsor(id, updates).catch(err => console.warn('Supabase updateSponsor async warning:', err.message));
+    }
+
     return this.schema.sponsors[idx];
   }
 
@@ -1717,6 +1793,10 @@ class TournamentDatabase {
     if (!sp) return;
     this.schema.sponsors = this.schema.sponsors.filter(s => s.id !== id);
     this.saveToStorage();
+
+    if (isSupabaseConfigured()) {
+      supabaseDb.deleteSponsor(id).catch(err => console.warn('Supabase deleteSponsor async warning:', err.message));
+    }
   }
 
   // Expenses
