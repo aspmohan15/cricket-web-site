@@ -335,6 +335,18 @@ export default function App() {
     showToast(`Application marked as ${status}!`, 'success');
   };
 
+  const handleUpdateRegistrationCatering = (id, cateringStatus) => {
+    db.updateRegistrationCateringStatus(id, cateringStatus);
+    refreshTournamentData(activeTournamentId);
+    showToast(`Catering status marked as ${cateringStatus}!`, 'success');
+  };
+
+  const handleUpdateRegistrationDetails = (id, updates) => {
+    db.updateRegistration(id, updates);
+    refreshTournamentData(activeTournamentId);
+    showToast('Registration dietary requirements updated', 'success');
+  };
+
   // Media
   const handleAddMedia = (data) => {
     db.addMediaAsset(data);
@@ -555,11 +567,9 @@ export default function App() {
               {currentSection === 'food_preferences' && (
                 <FoodPreferencesView
                   tournament={activeTournament}
-                  foodOrders={foodOrders}
-                  teams={teams}
-                  players={players}
-                  onCreateFoodOrder={handleCreateFoodOrder}
-                  onUpdateOrderStatus={handleUpdateFoodStatus}
+                  registrations={registrations}
+                  onUpdateRegistrationCatering={handleUpdateRegistrationCatering}
+                  onUpdateRegistrationDetails={handleUpdateRegistrationDetails}
                 />
               )}
 

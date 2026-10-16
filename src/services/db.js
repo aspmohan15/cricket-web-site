@@ -440,7 +440,7 @@ const initialPlayers = [
     phone: '+91 98450 55678',
     city: 'Bengaluru',
     shirtSize: 'L',
-    foodPreference: 'Jain',
+    foodPreference: 'Veg',
     registrationStatus: 'approved',
     paymentStatus: 'paid',
     matchesPlayed: 0,
@@ -612,6 +612,7 @@ const initialSponsors = [
     id: 'sp-01',
     tournamentId: 'tour-ed5-2026',
     name: 'Atlas Financial Technologies',
+    contactNumber: '+91 98201 12345',
     tier: 'Title Sponsor',
     contributionAmount: 7500000,
     benefitsDescription: 'Title naming rights across all broadcasts, jersey center chest branding, stadium boundary 3D decals, presentation stage backdrop.',
@@ -626,6 +627,7 @@ const initialSponsors = [
     id: 'sp-02',
     tournamentId: 'tour-ed5-2026',
     name: 'Volt Energy Beverages',
+    contactNumber: '+91 98110 99887',
     tier: 'Powered By',
     contributionAmount: 3500000,
     benefitsDescription: 'Dugout branding, drinks break segment ownership, official hydrator of the league, umpire sleeve patches.',
@@ -640,6 +642,7 @@ const initialSponsors = [
     id: 'sp-03',
     tournamentId: 'tour-ed5-2026',
     name: 'PaceMaker Sports Equipment',
+    contactNumber: '+91 98450 66554',
     tier: 'Official Partner',
     contributionAmount: 1800000,
     benefitsDescription: 'Official match ball provider, Player of the Match kit awards, boundary perimeter LED boards (4 mins per match).',
@@ -832,6 +835,116 @@ const initialRules = [
 const initialRegistrations = [
   {
     id: 'reg-01',
+    tournamentId: 'tour-ed5-2026',
+    fullName: 'Rohit Kulkarni',
+    email: 'rohit.k@cricketmumbai.in',
+    phone: '+91 98200 99887',
+    age: 27,
+    city: 'Mumbai',
+    primaryRole: 'All-Rounder',
+    battingStyle: 'Left-hand bat',
+    bowlingStyle: 'Left-arm fast',
+    preferredJerseyNo: 24,
+    shirtSize: 'L',
+    foodPreference: 'Veg',
+    hasBreakfast: true,
+    hasLunch: true,
+    guestCount: 2,
+    guestFoodPreference: 'Non-Veg',
+    hasGuestBreakfast: true,
+    hasGuestLunch: true,
+    cricHeroesProfileUrl: 'https://cricheroes.com/player-profile/sample-rohit',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    cateringStatus: 'confirmed',
+    applicationDate: '2026-10-05T14:20:00Z',
+    reviewedBy: 'Warhawks Organizer',
+    reviewNotes: 'Verified first-class state player. Cleared for Edition 5 match squad.'
+  },
+  {
+    id: 'reg-02',
+    tournamentId: 'tour-ed5-2026',
+    fullName: 'Shubham Gill Jr',
+    email: 'shubham.g@punjabcricket.org',
+    phone: '+91 98760 11223',
+    age: 23,
+    city: 'Chandigarh',
+    primaryRole: 'Batsman',
+    battingStyle: 'Right-hand bat',
+    bowlingStyle: 'Right-arm offbreak',
+    preferredJerseyNo: 7,
+    shirtSize: 'M',
+    foodPreference: 'Non-Veg',
+    hasBreakfast: true,
+    hasLunch: true,
+    guestCount: 1,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: true,
+    hasGuestLunch: true,
+    cricHeroesProfileUrl: 'https://cricheroes.com/player-profile/sample-shubham',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    cateringStatus: 'served',
+    applicationDate: '2026-10-08T09:15:00Z',
+    reviewedBy: 'Warhawks Organizer',
+    reviewNotes: 'Opening batsman credentials verified.'
+  },
+  {
+    id: 'reg-03',
+    tournamentId: 'tour-ed5-2026',
+    fullName: 'Farhan Zaidi',
+    email: 'farhan.z@delhiclub.in',
+    phone: '+91 98110 55443',
+    age: 26,
+    city: 'New Delhi',
+    primaryRole: 'Bowler',
+    battingStyle: 'Right-hand bat',
+    bowlingStyle: 'Right-arm fast',
+    preferredJerseyNo: 99,
+    shirtSize: 'XL',
+    foodPreference: 'Non-Veg',
+    hasBreakfast: false,
+    hasLunch: true,
+    guestCount: 0,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: false,
+    hasGuestLunch: false,
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    cateringStatus: 'confirmed',
+    applicationDate: '2026-10-09T16:45:00Z',
+    reviewedBy: 'Warhawks Organizer',
+    reviewNotes: 'Verified fast-bowling fitness certification.'
+  },
+  {
+    id: 'reg-04',
+    tournamentId: 'tour-ed5-2026',
+    fullName: 'Venkatesh Iyer',
+    email: 'venky.i@cricketmp.in',
+    phone: '+91 98930 22334',
+    age: 25,
+    city: 'Indore',
+    primaryRole: 'All-Rounder',
+    battingStyle: 'Left-hand bat',
+    bowlingStyle: 'Right-arm medium',
+    preferredJerseyNo: 23,
+    shirtSize: 'L',
+    foodPreference: 'Veg',
+    hasBreakfast: true,
+    hasLunch: true,
+    guestCount: 3,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: true,
+    hasGuestLunch: true,
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    cateringStatus: 'requested',
+    applicationDate: '2026-10-10T11:30:00Z',
+    reviewedBy: 'Warhawks Organizer',
+    reviewNotes: 'Hard-hitting all-rounder approved.'
+  },
+  {
+    id: 'reg-05',
     tournamentId: 'tour-ed6-2027',
     fullName: 'Arjun Tendulkar',
     email: 'arjun.t@cricketmumbai.in',
@@ -844,52 +957,43 @@ const initialRegistrations = [
     preferredJerseyNo: 24,
     shirtSize: 'L',
     foodPreference: 'Non-Veg',
-    cricHeroesProfileUrl: 'https://cricheroes.com/player-profile/sample-arjun',
+    hasBreakfast: true,
+    hasLunch: true,
+    guestCount: 2,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: true,
+    hasGuestLunch: true,
     approvalStatus: 'approved',
     paymentStatus: 'paid',
+    cateringStatus: 'confirmed',
     applicationDate: '2026-10-05T14:20:00Z',
-    reviewedBy: 'Super Admin',
-    reviewNotes: 'Verified state first-class record. Cleared for Edition 6 auction pool.'
+    reviewedBy: 'Warhawks Organizer',
+    reviewNotes: 'Verified first-class state player. Cleared for Edition 6.'
   },
   {
-    id: 'reg-02',
+    id: 'reg-06',
     tournamentId: 'tour-ed6-2027',
-    fullName: 'Shubham Gill Jr',
-    email: 'shubham.g@punjabcricket.org',
-    phone: '+91 98760 11223',
-    age: 23,
-    city: 'Chandigarh',
-    primaryRole: 'Batsman',
+    fullName: 'Kabir Khan',
+    email: 'kabir.k@mumbaiclub.org',
+    phone: '+91 98200 44332',
+    age: 22,
+    city: 'Mumbai',
+    primaryRole: 'Wicket-Keeper',
     battingStyle: 'Right-hand bat',
-    bowlingStyle: 'Right-arm offbreak',
-    preferredJerseyNo: 7,
+    bowlingStyle: 'Right-arm medium',
+    preferredJerseyNo: 12,
     shirtSize: 'M',
     foodPreference: 'Veg',
-    cricHeroesProfileUrl: 'https://cricheroes.com/player-profile/sample-shubham',
+    hasBreakfast: true,
+    hasLunch: true,
+    guestCount: 1,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: false,
+    hasGuestLunch: true,
     approvalStatus: 'pending',
     paymentStatus: 'paid',
-    applicationDate: '2026-10-12T09:15:00Z',
-    reviewedBy: undefined
-  },
-  {
-    id: 'reg-03',
-    tournamentId: 'tour-ed6-2027',
-    fullName: 'Farhan Zaidi',
-    email: 'farhan.z@delhiclub.in',
-    phone: '+91 98110 55443',
-    age: 26,
-    city: 'New Delhi',
-    primaryRole: 'Bowler',
-    battingStyle: 'Right-hand bat',
-    bowlingStyle: 'Right-arm fast',
-    preferredJerseyNo: 99,
-    shirtSize: 'XL',
-    foodPreference: 'Halal',
-    approvalStatus: 'waitlisted',
-    paymentStatus: 'pending',
-    applicationDate: '2026-10-13T16:45:00Z',
-    reviewedBy: 'Tournament Admin',
-    reviewNotes: 'Awaiting fast-bowling fitness certification.'
+    cateringStatus: 'requested',
+    applicationDate: '2026-10-15T08:30:00Z'
   }
 ];
 
@@ -1093,6 +1197,62 @@ class TournamentDatabase {
           parsed.auditLogs = parsed.auditLogs.map(log => ({
             ...log,
             userRole: (log.userRole === 'super_admin' || log.userRole === 'tournament_admin' || log.userRole === 'organizer') ? 'organizer' : 'player'
+          }));
+        }
+
+        // Dietary & Guest Migration: strictly 'Veg' and 'Non-Veg' (remove Jain, Vegan, Halal)
+        if (parsed.players && Array.isArray(parsed.players)) {
+          parsed.players = parsed.players.map(p => {
+            let pref = p.foodPreference;
+            if (pref === 'Jain' || pref === 'Vegan') pref = 'Veg';
+            else if (pref === 'Halal') pref = 'Non-Veg';
+            else if (pref !== 'Veg' && pref !== 'Non-Veg') pref = 'Veg';
+            return { ...p, foodPreference: pref };
+          });
+        }
+
+        if (parsed.registrations && Array.isArray(parsed.registrations)) {
+          parsed.registrations = parsed.registrations.map(r => {
+            let pref = r.foodPreference;
+            if (pref === 'Jain' || pref === 'Vegan') pref = 'Veg';
+            else if (pref === 'Halal') pref = 'Non-Veg';
+            else if (pref !== 'Veg' && pref !== 'Non-Veg') pref = 'Veg';
+
+            let guestPref = r.guestFoodPreference;
+            if (guestPref === 'Jain' || guestPref === 'Vegan') guestPref = 'Veg';
+            else if (guestPref === 'Halal') guestPref = 'Non-Veg';
+            else if (guestPref !== 'Veg' && guestPref !== 'Non-Veg') guestPref = 'Veg';
+
+            const guestCount = Math.max(0, parseInt(r.guestCount ?? r.guestNumber, 10) || 0);
+
+            return {
+              ...r,
+              foodPreference: pref,
+              hasBreakfast: r.hasBreakfast ?? true,
+              hasLunch: r.hasLunch ?? true,
+              guestCount,
+              guestFoodPreference: guestPref,
+              hasGuestBreakfast: r.hasGuestBreakfast ?? (guestCount > 0),
+              hasGuestLunch: r.hasGuestLunch ?? (guestCount > 0),
+              cateringStatus: r.cateringStatus || 'confirmed',
+              reviewedBy: (r.reviewedBy === 'Super Admin' || r.reviewedBy === 'Tournament Admin') ? 'Warhawks Organizer' : r.reviewedBy
+            };
+          });
+
+          // Ensure default registrations for current edition exist if missing
+          const hasEd5Regs = parsed.registrations.some(r => r.tournamentId === 'tour-ed5-2026');
+          if (!hasEd5Regs) {
+            const ed5Seeds = initialRegistrations.filter(r => r.tournamentId === 'tour-ed5-2026');
+            parsed.registrations = [...parsed.registrations, ...ed5Seeds];
+          }
+        } else {
+          parsed.registrations = initialRegistrations;
+        }
+
+        if (parsed.sponsors && Array.isArray(parsed.sponsors)) {
+          parsed.sponsors = parsed.sponsors.map((s, idx) => ({
+            ...s,
+            contactNumber: s.contactNumber || `+91 9820${idx} 5544${idx}`
           }));
         }
 
@@ -1658,6 +1818,7 @@ class TournamentDatabase {
       throw new Error('A registration application with this email already exists for this edition.');
     }
 
+    const guestCount = Math.max(0, parseInt(data.guestCount ?? data.guestNumber, 10) || 0);
     const newReg = {
       id: `reg-${Date.now().toString(36)}`,
       tournamentId: data.tournamentId,
@@ -1671,7 +1832,14 @@ class TournamentDatabase {
       bowlingStyle: data.bowlingStyle || 'Right-arm medium',
       preferredJerseyNo: parseInt(data.preferredJerseyNo, 10) || 18,
       shirtSize: data.shirtSize || 'L',
-      foodPreference: data.foodPreference || 'Veg',
+      foodPreference: data.foodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
+      hasBreakfast: Boolean(data.hasBreakfast),
+      hasLunch: Boolean(data.hasLunch),
+      guestCount,
+      guestFoodPreference: data.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
+      hasGuestBreakfast: guestCount > 0 ? Boolean(data.hasGuestBreakfast) : false,
+      hasGuestLunch: guestCount > 0 ? Boolean(data.hasGuestLunch) : false,
+      cateringStatus: 'requested',
       approvalStatus: 'pending',
       paymentStatus: 'pending',
       applicationDate: new Date().toISOString(),
@@ -1755,6 +1923,18 @@ class TournamentDatabase {
     }
     this.saveToStorage();
     this.logAction(reg.tournamentId, 'Warhawks Organizer', 'organizer', 'REGISTRATION_STATUS_UPDATE', 'Registration', id, `Updated ${reg.fullName} application to ${approvalStatus}`);
+  }
+
+  updateRegistration(id, updates) {
+    const idx = this.schema.registrations.findIndex(r => r.id === id);
+    if (idx === -1) throw new Error('Registration record not found');
+    this.schema.registrations[idx] = { ...this.schema.registrations[idx], ...updates };
+    this.saveToStorage();
+    return this.schema.registrations[idx];
+  }
+
+  updateRegistrationCateringStatus(id, cateringStatus) {
+    return this.updateRegistration(id, { cateringStatus });
   }
 
   // Media Library

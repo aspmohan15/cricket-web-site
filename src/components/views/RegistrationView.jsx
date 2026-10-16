@@ -15,7 +15,11 @@ import {
   Send,
   Ticket,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Lock,
+  Utensils,
+  Users,
+  Coffee
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import {
@@ -58,7 +62,15 @@ export const RegistrationView = ({
     bowlingStyle: 'Right-arm medium',
     preferredJerseyNo: 18,
     shirtSize: 'L',
-    foodPreference: 'Veg'
+    // Dietary and meal selections for Player (Only 'Veg' and 'Non-Veg')
+    foodPreference: 'Veg',
+    hasBreakfast: true,
+    hasLunch: true,
+    // Accompanying guests
+    guestCount: 0,
+    guestFoodPreference: 'Veg',
+    hasGuestBreakfast: false,
+    hasGuestLunch: false
   });
 
   // Find player's existing registration for this tournament
@@ -101,8 +113,24 @@ export const RegistrationView = ({
     }
     onPlayerRegister({
       tournamentId: tournament.id,
-      ...playerForm
+      ...playerForm,
+      guestCount: Math.max(0, parseInt(playerForm.guestCount, 10) || 0)
     });
+  };
+
+  // Helper to compute party meal totals
+  const getPartyMealStats = (reg) => {
+    const pBreakfast = reg.hasBreakfast ? 1 : 0;
+    const pLunch = reg.hasLunch ? 1 : 0;
+    const gCount = Math.max(0, parseInt(reg.guestCount, 10) || 0);
+    const gBreakfast = (gCount > 0 && reg.hasGuestBreakfast) ? gCount : 0;
+    const gLunch = (gCount > 0 && reg.hasGuestLunch) ? gCount : 0;
+    return {
+      totalBreakfasts: pBreakfast + gBreakfast,
+      totalLunches: pLunch + gLunch,
+      totalMeals: (pBreakfast + gBreakfast) + (pLunch + gLunch),
+      guestCount: gCount
+    };
   };
 
   return (
@@ -202,7 +230,7 @@ export const RegistrationView = ({
       </div>
 
       {/* ======================================================== */}
-      {/* PLAYER ROLE VIEW: Personal Ticket or Registration Form  */}
+      {/* PLAYER ROLE VIEW: Personal Pass or Registration Form     */}
       {/* ======================================================== */}
       {!isOrganizer && (
         <div className="space-y-6">
@@ -270,29 +298,69 @@ export const RegistrationView = ({
                 </div>
               </div>
 
-              {/* Registered details grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              {/* Registered athlete & meal details grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded-lg">
                   <span className="text-[10px] text-slate-400 uppercase font-medium block">Playing Discipline</span>
                   <span className="font-bold text-slate-800 block mt-0.5">{myRegistration.primaryRole}</span>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Batting / Bowling</span>
-                  <span className="font-semibold text-slate-800 block mt-0.5">
-                    {myRegistration.battingStyle?.split(' ')[0]} / {myRegistration.bowlingStyle?.split(' ')[1] || 'Med'}
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    {myRegistration.battingStyle} · {myRegistration.bowlingStyle}
                   </span>
                 </div>
+
                 <div className="p-3 bg-slate-50 rounded-lg">
-                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Preferred Jersey #</span>
-                  <span className="font-mono font-bold text-slate-800 block mt-0.5">#{myRegistration.preferredJerseyNo}</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Jersey & City</span>
+                  <span className="font-mono font-bold text-slate-800 block mt-0.5">#{myRegistration.preferredJerseyNo} (Size {myRegistration.shirtSize})</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">{myRegistration.city}</span>
                 </div>
+
                 <div className="p-3 bg-slate-50 rounded-lg">
-                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Dietary & Kit</span>
-                  <span className="font-semibold text-slate-800 block mt-0.5">
-                    {myRegistration.foodPreference} (Size {myRegistration.shirtSize})
-                  </span>
+                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Player Meal Requisition</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      myRegistration.foodPreference === 'Veg' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {myRegistration.foodPreference}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-700">
+                      {[myRegistration.hasBreakfast ? 'Breakfast' : null, myRegistration.hasLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals Selected'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <span className="text-[10px] text-slate-400 uppercase font-medium block">Accompanying Guests</span>
+                  <div className="font-bold text-slate-800 mt-0.5">
+                    {myRegistration.guestCount || 0} Guest(s)
+                  </div>
+                  {myRegistration.guestCount > 0 ? (
+                    <span className="text-[11px] text-slate-600 block mt-0.5">
+                      {myRegistration.guestFoodPreference} · {[myRegistration.hasGuestBreakfast ? 'Breakfast' : null, myRegistration.hasGuestLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 block mt-0.5">Solo Athlete</span>
+                  )}
                 </div>
               </div>
+
+              {/* Combined Party Meal Requisition Banner */}
+              {(() => {
+                const stats = getPartyMealStats(myRegistration);
+                return (
+                  <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Utensils className="w-4 h-4 text-emerald-700 shrink-0" />
+                      <span className="font-semibold text-emerald-950">Party Catering Allocation:</span>
+                      <span className="text-emerald-800">
+                        {stats.totalBreakfasts} Breakfast(s) · {stats.totalLunches} Lunch(es) (Total {stats.totalMeals} meals for {1 + stats.guestCount} persons)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                      Catering: {myRegistration.cateringStatus || 'Confirmed'}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Cancel Button (if pending) */}
               {myRegistration.approvalStatus === 'pending' && (
@@ -321,15 +389,18 @@ export const RegistrationView = ({
                   Player Tournament Entry Application
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Submit your athlete profile to enter the player auction pool for <strong>{tournament?.name}</strong>.
+                  Submit your athlete profile, guest details, and meal selections to enter the player pool for <strong>{tournament?.name}</strong> (Organized by Warhawks).
                 </p>
               </div>
 
               {tournament?.registrationOpen ? (
-                <form onSubmit={handlePlayerFormSubmit} className="space-y-4 text-xs">
+                <form onSubmit={handlePlayerFormSubmit} className="space-y-5 text-xs">
+                  {/* Athlete Personal Details */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Full Legal Name</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Full Legal Name <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
@@ -340,7 +411,9 @@ export const RegistrationView = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="email"
                         required
@@ -351,7 +424,9 @@ export const RegistrationView = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Phone Number</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Phone Number <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="tel"
                         required
@@ -362,7 +437,9 @@ export const RegistrationView = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">City / Origin</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        City / Origin <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
@@ -373,7 +450,9 @@ export const RegistrationView = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Age</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Age <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="number"
                         required
@@ -386,11 +465,13 @@ export const RegistrationView = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Primary Playing Role</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Primary Playing Role <span className="text-rose-500">*</span>
+                      </label>
                       <select
                         value={playerForm.primaryRole}
                         onChange={e => setPlayerForm({ ...playerForm, primaryRole: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
                       >
                         {PLAYER_ROLES.map(role => (
                           <option key={role} value={role}>{role}</option>
@@ -403,7 +484,7 @@ export const RegistrationView = ({
                       <select
                         value={playerForm.battingStyle}
                         onChange={e => setPlayerForm({ ...playerForm, battingStyle: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                       >
                         {BATTING_STYLES.map(style => (
                           <option key={style} value={style}>{style}</option>
@@ -416,7 +497,7 @@ export const RegistrationView = ({
                       <select
                         value={playerForm.bowlingStyle}
                         onChange={e => setPlayerForm({ ...playerForm, bowlingStyle: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                       >
                         {BOWLING_STYLES.map(style => (
                           <option key={style} value={style}>{style}</option>
@@ -441,7 +522,7 @@ export const RegistrationView = ({
                       <select
                         value={playerForm.shirtSize}
                         onChange={e => setPlayerForm({ ...playerForm, shirtSize: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
                       >
                         <option value="S">Small (S)</option>
                         <option value="M">Medium (M)</option>
@@ -450,18 +531,147 @@ export const RegistrationView = ({
                         <option value="XXL">Double XL (XXL)</option>
                       </select>
                     </div>
+                  </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="block font-semibold text-slate-700 mb-1">Dietary Preference</label>
-                      <select
-                        value={playerForm.foodPreference}
-                        onChange={e => setPlayerForm({ ...playerForm, foodPreference: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
-                      >
-                        {FOOD_PREFERENCES.map(diet => (
-                          <option key={diet} value={diet}>{diet}</option>
-                        ))}
-                      </select>
+                  {/* Section 1: Player Food and Dietary Requirements */}
+                  <div className="pt-3 border-t border-slate-200">
+                    <h3 className="font-bold text-slate-900 text-xs flex items-center gap-2 mb-2">
+                      <Utensils className="w-4 h-4 text-emerald-600" />
+                      <span>Player Food & Dietary Management</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mb-3">
+                      Specify your personal dietary preference and select which match-day meals are required.
+                    </p>
+
+                    <div className="bg-slate-50 rounded-xl p-3.5 sm:p-4 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1.5">
+                          Player Dietary Preference <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={playerForm.foodPreference}
+                          onChange={e => setPlayerForm({ ...playerForm, foodPreference: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white cursor-pointer"
+                        >
+                          <option value="Veg">Veg (Vegetarian)</option>
+                          <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1.5">
+                          Player Meal Selection <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="flex flex-wrap items-center gap-4 pt-1">
+                          <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={playerForm.hasBreakfast}
+                              onChange={e => setPlayerForm({ ...playerForm, hasBreakfast: e.target.checked })}
+                              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span>Breakfast</span>
+                          </label>
+
+                          <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={playerForm.hasLunch}
+                              onChange={e => setPlayerForm({ ...playerForm, hasLunch: e.target.checked })}
+                              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span>Lunch</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Accompanying Guests & Dietary Requirements */}
+                  <div className="pt-3 border-t border-slate-200">
+                    <h3 className="font-bold text-slate-900 text-xs flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      <span>Accompanying Guests & Guest Meals</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mb-3">
+                      Capture the number of guests accompanying you and choose the meal options for them.
+                    </p>
+
+                    <div className="bg-slate-50 rounded-xl p-3.5 sm:p-4 border border-slate-200 space-y-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1.5">
+                          Guest Number (Accompanying Guests)
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min={0}
+                            max={20}
+                            value={playerForm.guestCount}
+                            onChange={e => {
+                              const count = Math.max(0, parseInt(e.target.value, 10) || 0);
+                              setPlayerForm({
+                                ...playerForm,
+                                guestCount: count,
+                                hasGuestBreakfast: count > 0 ? playerForm.hasGuestBreakfast : false,
+                                hasGuestLunch: count > 0 ? playerForm.hasGuestLunch : false
+                              });
+                            }}
+                            className="w-32 px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono font-bold bg-white"
+                          />
+                          <span className="text-slate-500 text-xs">
+                            {playerForm.guestCount === 0
+                              ? 'Enter 0 if attending solo'
+                              : `${playerForm.guestCount} guest(s) will accompany player`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Guest Dietary Preference and Guest Meals if guests > 0 */}
+                      {playerForm.guestCount > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200/70">
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1.5">
+                              Guest Dietary Preference <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                              value={playerForm.guestFoodPreference}
+                              onChange={e => setPlayerForm({ ...playerForm, guestFoodPreference: e.target.value })}
+                              className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white cursor-pointer"
+                            >
+                              <option value="Veg">Veg (Vegetarian)</option>
+                              <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1.5">
+                              Guest Meal Selection
+                            </label>
+                            <div className="flex flex-wrap items-center gap-4 pt-1">
+                              <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={playerForm.hasGuestBreakfast}
+                                  onChange={e => setPlayerForm({ ...playerForm, hasGuestBreakfast: e.target.checked })}
+                                  className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span>Guest Breakfast</span>
+                              </label>
+
+                              <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={playerForm.hasGuestLunch}
+                                  onChange={e => setPlayerForm({ ...playerForm, hasGuestLunch: e.target.checked })}
+                                  className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span>Guest Lunch</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -529,66 +739,77 @@ export const RegistrationView = ({
                 No applicants matching current filter.
               </div>
             ) : (
-              filteredRegistrations.map(app => (
-                <div
-                  key={app.id}
-                  className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 pr-1">
-                      <div className="font-bold text-slate-900 text-sm truncate">{app.fullName}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 truncate">{app.email} · {app.phone}</div>
-                    </div>
+              filteredRegistrations.map(app => {
+                const stats = getPartyMealStats(app);
+                return (
+                  <div
+                    key={app.id}
+                    className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 pr-1">
+                        <div className="font-bold text-slate-900 text-sm truncate">{app.fullName}</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">{app.email} · {app.phone}</div>
+                      </div>
 
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize shrink-0 ${
-                        app.approvalStatus === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : app.approvalStatus === 'pending'
-                          ? 'bg-amber-100 text-amber-800'
-                          : app.approvalStatus === 'waitlisted'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
-                    >
-                      {app.approvalStatus}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-medium block">Discipline</span>
-                      <span className="font-semibold text-slate-800 truncate block">{app.primaryRole}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-medium block">Location & Age</span>
-                      <span className="text-slate-700 block">{app.city} · {app.age} yrs</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-medium block">Diet & Kit</span>
-                      <span className="text-slate-600 block">{app.foodPreference} · Size {app.shirtSize}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-medium block">Fee Status</span>
-                      <span className={`font-semibold capitalize ${app.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-amber-700'}`}>
-                        {app.paymentStatus}
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize shrink-0 ${
+                          app.approvalStatus === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : app.approvalStatus === 'pending'
+                            ? 'bg-amber-100 text-amber-800'
+                            : app.approvalStatus === 'waitlisted'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {app.approvalStatus}
                       </span>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
-                    <button
-                      onClick={() => {
-                        setReviewModalApp(app);
-                        setReviewNotes(app.reviewNotes || '');
-                      }}
-                      className="w-full sm:w-auto px-4 py-2 min-h-[38px] rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer text-center"
-                    >
-                      Review Application
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Discipline</span>
+                        <span className="font-semibold text-slate-800 truncate block">{app.primaryRole}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Location & Age</span>
+                        <span className="text-slate-700 block">{app.city} · {app.age} yrs</span>
+                      </div>
+                      <div className="col-span-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Diet & Meals Requisition</span>
+                        <div className="font-semibold text-slate-800 mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                            app.foodPreference === 'Veg' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            Player: {app.foodPreference}
+                          </span>
+                          <span className="text-slate-600 text-[11px]">
+                            ({[app.hasBreakfast ? 'B' : null, app.hasLunch ? 'L' : null].filter(Boolean).join('+') || 'None'})
+                          </span>
+                          {stats.guestCount > 0 && (
+                            <span className="text-slate-600 text-[11px]">
+                              · {stats.guestCount} Guest(s) ({app.guestFoodPreference}, {[app.hasGuestBreakfast ? 'B' : null, app.hasGuestLunch ? 'L' : null].filter(Boolean).join('+') || 'None'})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                      <button
+                        onClick={() => {
+                          setReviewModalApp(app);
+                          setReviewNotes(app.reviewNotes || '');
+                        }}
+                        className="w-full px-4 py-2 min-h-[38px] rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer text-center"
+                      >
+                        Review Application
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -601,8 +822,8 @@ export const RegistrationView = ({
                     <th className="py-3 px-4">Applicant</th>
                     <th className="py-3 px-4">Role & Specs</th>
                     <th className="py-3 px-4">City & Age</th>
-                    <th className="py-3 px-4">Diet & Kit</th>
-                    <th className="py-3 px-4">Fee Status</th>
+                    <th className="py-3 px-4">Player & Guest Diet</th>
+                    <th className="py-3 px-4">Party Meals Req.</th>
                     <th className="py-3 px-4">Decision</th>
                     <th className="py-3 px-4 text-right">Action</th>
                   </tr>
@@ -615,72 +836,88 @@ export const RegistrationView = ({
                       </td>
                     </tr>
                   ) : (
-                    filteredRegistrations.map(app => (
-                      <tr key={app.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{app.fullName}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{app.email}</div>
-                          <div className="text-[10px] text-slate-400">{app.phone}</div>
-                        </td>
+                    filteredRegistrations.map(app => {
+                      const stats = getPartyMealStats(app);
+                      return (
+                        <tr key={app.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{app.fullName}</div>
+                            <div className="text-[11px] text-slate-400 font-mono">{app.email}</div>
+                            <div className="text-[10px] text-slate-400">{app.phone}</div>
+                          </td>
 
-                        <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-800">{app.primaryRole}</span>
-                          <div className="text-[11px] text-slate-400">
-                            {app.battingStyle} · {app.bowlingStyle}
-                          </div>
-                        </td>
+                          <td className="py-3 px-4">
+                            <span className="font-semibold text-slate-800">{app.primaryRole}</span>
+                            <div className="text-[11px] text-slate-400">
+                              {app.battingStyle} · {app.bowlingStyle}
+                            </div>
+                          </td>
 
-                        <td className="py-3 px-4 text-slate-700">
-                          <div>{app.city}</div>
-                          <div className="text-[11px] text-slate-400">{app.age} years</div>
-                        </td>
+                          <td className="py-3 px-4 text-slate-700">
+                            <div>{app.city}</div>
+                            <div className="text-[11px] text-slate-400">{app.age} years</div>
+                          </td>
 
-                        <td className="py-3 px-4 text-slate-700">
-                          <div>{app.foodPreference}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">Kit Size {app.shirtSize} · #{app.preferredJerseyNo}</div>
-                        </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                app.foodPreference === 'Veg' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {app.foodPreference}
+                              </span>
+                              <span className="text-[11px] text-slate-500">
+                                ({[app.hasBreakfast ? 'B' : null, app.hasLunch ? 'L' : null].filter(Boolean).join('+') || 'None'})
+                              </span>
+                            </div>
+                            {stats.guestCount > 0 ? (
+                              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                                <Users className="w-3 h-3 text-slate-400" />
+                                <span>{stats.guestCount} Guest(s): {app.guestFoodPreference}</span>
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-slate-400 mt-0.5">Solo Athlete</div>
+                            )}
+                          </td>
 
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold capitalize ${
-                              app.paymentStatus === 'paid'
-                                ? 'bg-emerald-50 text-emerald-800'
-                                : 'bg-amber-50 text-amber-800'
-                            }`}
-                          >
-                            {app.paymentStatus}
-                          </span>
-                        </td>
+                          <td className="py-3 px-4">
+                            <div className="font-mono font-bold text-slate-900">
+                              {stats.totalBreakfasts} Breakfast(s)
+                            </div>
+                            <div className="font-mono text-slate-600 text-[11px]">
+                              {stats.totalLunches} Lunch(es)
+                            </div>
+                          </td>
 
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${
-                              app.approvalStatus === 'approved'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : app.approvalStatus === 'pending'
-                                ? 'bg-amber-100 text-amber-800'
-                                : app.approvalStatus === 'waitlisted'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-rose-100 text-rose-800'
-                            }`}
-                          >
-                            {app.approvalStatus}
-                          </span>
-                        </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${
+                                app.approvalStatus === 'approved'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : app.approvalStatus === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : app.approvalStatus === 'waitlisted'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {app.approvalStatus}
+                            </span>
+                          </td>
 
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => {
-                              setReviewModalApp(app);
-                              setReviewNotes(app.reviewNotes || '');
-                            }}
-                            className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-[11px] cursor-pointer"
-                          >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setReviewModalApp(app);
+                                setReviewNotes(app.reviewNotes || '');
+                              }}
+                              className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-[11px] cursor-pointer"
+                            >
+                              Review
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -695,20 +932,40 @@ export const RegistrationView = ({
           isOpen={true}
           onClose={() => setReviewModalApp(null)}
           title={`Review Application: ${reviewModalApp.fullName}`}
-          subtitle={`Applicant for ${tournament?.name || 'Tournament'}`}
+          subtitle={`Applicant for ${tournament?.name || 'Tournament'} (Warhawks Tournament Operations)`}
           maxWidth="lg"
         >
           <div className="space-y-4 text-xs">
-            <div className="p-3 bg-slate-50 rounded-lg space-y-1">
-              <div className="font-semibold text-slate-900">{reviewModalApp.fullName} · {reviewModalApp.primaryRole}</div>
+            <div className="p-3 bg-slate-50 rounded-lg space-y-1.5">
+              <div className="font-semibold text-slate-900 text-sm">{reviewModalApp.fullName} · {reviewModalApp.primaryRole}</div>
               <div className="text-slate-500">{reviewModalApp.email} · {reviewModalApp.phone} · {reviewModalApp.city}</div>
-              <div className="text-[11px] text-slate-400">
-                Specs: {reviewModalApp.battingStyle} · {reviewModalApp.bowlingStyle} · #{reviewModalApp.preferredJerseyNo} · Diet: {reviewModalApp.foodPreference}
+              <div className="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
+                Playing specs: {reviewModalApp.battingStyle} · {reviewModalApp.bowlingStyle} · #{reviewModalApp.preferredJerseyNo} (Size {reviewModalApp.shirtSize})
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-slate-200 mt-2 space-y-1">
+                <span className="font-bold text-slate-800 block text-[11px]">Meal & Catering Requisition:</span>
+                <div className="text-slate-700">
+                  <strong>Player Diet:</strong> {reviewModalApp.foodPreference} ({[reviewModalApp.hasBreakfast ? 'Breakfast' : null, reviewModalApp.hasLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'})
+                </div>
+                <div className="text-slate-700">
+                  <strong>Accompanying Guests:</strong> {reviewModalApp.guestCount || 0} Guest(s)
+                  {reviewModalApp.guestCount > 0 && (
+                    <span> — Diet: {reviewModalApp.guestFoodPreference} ({[reviewModalApp.hasGuestBreakfast ? 'Breakfast' : null, reviewModalApp.hasGuestLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'})</span>
+                  )}
+                </div>
+                {(() => {
+                  const s = getPartyMealStats(reviewModalApp);
+                  return (
+                    <div className="font-semibold text-emerald-800 text-[11px] pt-1">
+                      Party Total: {s.totalBreakfasts} Breakfast(s) and {s.totalLunches} Lunch(es) for {1 + s.guestCount} persons.
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Administrative Notes</label>
+              <label className="block font-semibold text-slate-700 mb-1">Administrative Review Notes</label>
               <textarea
                 rows={3}
                 value={reviewNotes}
@@ -752,53 +1009,55 @@ export const RegistrationView = ({
         </Modal>
       )}
 
-      {/* Date Configuration Modal */}
-      <Modal
-        isOpen={dateModalOpen}
-        onClose={() => setDateModalOpen(false)}
-        title="Configure Registration Portal Dates"
-        subtitle={`Schedule active application window for ${tournament?.name || 'Tournament'}`}
-      >
-        <form onSubmit={handleSaveDates} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Registration Opening Date</label>
-            <input
-              type="date"
-              required
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
-            />
-          </div>
+      {/* Window Dates Modal */}
+      {dateModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setDateModalOpen(false)}
+          title="Registration Window Dates"
+          subtitle={`Schedule admission dates for ${tournament?.name}`}
+        >
+          <form onSubmit={handleSaveDates} className="space-y-4 text-xs">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Window Opening Date</label>
+              <input
+                type="date"
+                required
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Registration Deadline / Cut-off</label>
-            <input
-              type="date"
-              required
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
-            />
-          </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Window Closing Date</label>
+              <input
+                type="date"
+                required
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setDateModalOpen(false)}
-              className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="min-h-[38px] px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
-            >
-              Update Schedule
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setDateModalOpen(false)}
+                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer"
+              >
+                Update Schedule
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

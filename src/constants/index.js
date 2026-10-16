@@ -30,9 +30,9 @@ export const BOWLING_STYLES = [
   'Slow left-arm orthodox'
 ];
 
-export const FOOD_PREFERENCES = ['Veg', 'Non-Veg', 'Jain', 'Vegan', 'Halal'];
+export const FOOD_PREFERENCES = ['Veg', 'Non-Veg'];
 
-export const MEAL_TYPES = ['Breakfast', 'Lunch', 'High Tea', 'Dinner'];
+export const MEAL_TYPES = ['Breakfast', 'Lunch'];
 
 export const MEAL_STATUSES = ['requested', 'confirmed', 'served'];
 

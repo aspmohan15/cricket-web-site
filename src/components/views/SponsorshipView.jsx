@@ -5,6 +5,7 @@ import {
   Globe,
   Mail,
   User,
+  Phone,
   Edit,
   Trash2,
   CheckCircle,
@@ -12,7 +13,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
-import { SPONSOR_TIERS } from '../../constants';
 
 export const SponsorshipView = ({
   tournament,
@@ -26,12 +26,9 @@ export const SponsorshipView = ({
 
   const [form, setForm] = useState({
     name: '',
-    tier: 'Associate Sponsor',
-    contributionAmount: 2500000,
-    benefitsDescription: '',
-    websiteUrl: '',
-    contactPerson: '',
+    contactNumber: '',
     contactEmail: '',
+    contributionAmount: 2500000,
     isActive: true,
     displayOnPublicWeb: true
   });
@@ -40,47 +37,44 @@ export const SponsorshipView = ({
     e.preventDefault();
     onCreateSponsor({
       tournamentId: tournament.id,
-      name: form.name,
-      tier: form.tier,
-      contributionAmount: form.contributionAmount,
-      benefitsDescription: form.benefitsDescription,
-      websiteUrl: form.websiteUrl,
-      contactPerson: form.contactPerson,
-      contactEmail: form.contactEmail,
+      name: form.name.trim(),
+      contactNumber: form.contactNumber.trim(),
+      contactEmail: form.contactEmail?.trim() || '',
+      contributionAmount: parseInt(form.contributionAmount, 10) || 0,
       isActive: form.isActive,
       displayOnPublicWeb: form.displayOnPublicWeb
     });
     setCreateModalOpen(false);
   };
 
-  const totalCommitted = sponsors.reduce((acc, s) => acc + s.contributionAmount, 0);
+  const totalCommitted = sponsors.reduce((acc, s) => acc + (s.contributionAmount || 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Sponsorship Partnerships</h1>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-semibold mb-1 border border-emerald-200">
+            <span>🦅 Warhawks Corporate Partnerships</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900">Sponsorship Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage corporate brand agreements, sponsorship tiers, and website visibility for {tournament.name} organized by Warhawks.
+            Manage sponsor partners, contact records, financial commitments, and website visibility for {tournament?.name} (Organized by Warhawks).
           </p>
         </div>
 
         <div className="flex flex-col xs:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
           <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-center">
-            <span className="text-emerald-700 font-medium">Raised: </span>
+            <span className="text-emerald-700 font-medium">Committed: </span>
             <span className="font-bold font-mono text-emerald-900">₹{(totalCommitted / 100000).toFixed(1)}L</span>
           </div>
           <button
             onClick={() => {
               setForm({
                 name: '',
-                tier: 'Associate Sponsor',
-                contributionAmount: 2000000,
-                benefitsDescription: 'Boundary perimeter LED board rotations, VIP corporate box passes, and digital website link.',
-                websiteUrl: 'https://',
-                contactPerson: '',
+                contactNumber: '',
                 contactEmail: '',
+                contributionAmount: 2000000,
                 isActive: true,
                 displayOnPublicWeb: true
               });
@@ -95,37 +89,41 @@ export const SponsorshipView = ({
       </div>
 
       {/* Sponsors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sponsors.map(sponsor => {
-          return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {sponsors.length === 0 ? (
+          <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+            No sponsors registered yet for this edition. Click "Add Sponsor" to add a tournament sponsor.
+          </div>
+        ) : (
+          sponsors.map(sponsor => (
             <div
               key={sponsor.id}
               className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between"
             >
-              <div className="p-5">
+              <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono">
-                      {sponsor.tier}
+                  <div className="min-w-0 pr-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono inline-block">
+                      {sponsor.tier || 'Tournament Sponsor'}
                     </span>
-                    <h3 className="font-bold text-base text-slate-900 mt-1.5">{sponsor.name}</h3>
+                    <h3 className="font-bold text-base text-slate-900 mt-1.5 truncate">{sponsor.name}</h3>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => setEditingSponsor(sponsor)}
-                      className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                       title="Edit sponsor"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Remove sponsor ${sponsor.name}?`)) {
+                        if (confirm(`Remove sponsor "${sponsor.name}"?`)) {
                           onDeleteSponsor(sponsor.id);
                         }
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-1.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                       title="Delete sponsor"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -133,23 +131,37 @@ export const SponsorshipView = ({
                   </div>
                 </div>
 
-                <div className="mt-3 text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                  <span className="font-semibold text-slate-800 block text-[11px] mb-0.5">Benefits & Deliverables:</span>
-                  {sponsor.benefitsDescription}
-                </div>
+                {/* Legacy benefits description if available */}
+                {sponsor.benefitsDescription && (
+                  <div className="mt-3 text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <span className="font-semibold text-slate-800 block text-[11px] mb-0.5">Benefits & Deliverables:</span>
+                    {sponsor.benefitsDescription}
+                  </div>
+                )}
 
-                <div className="mt-4 space-y-1.5 text-xs text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{sponsor.contactPerson}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{sponsor.contactEmail}</span>
-                  </div>
+                {/* Sponsor Contact Details */}
+                <div className="mt-4 space-y-2 text-xs text-slate-600">
+                  {sponsor.contactNumber && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="font-mono font-medium text-slate-800">{sponsor.contactNumber}</span>
+                    </div>
+                  )}
+                  {sponsor.contactEmail && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="font-mono text-slate-600 truncate">{sponsor.contactEmail}</span>
+                    </div>
+                  )}
+                  {sponsor.contactPerson && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="text-slate-600">{sponsor.contactPerson}</span>
+                    </div>
+                  )}
                   {sponsor.websiteUrl && (
                     <div className="flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-slate-400" />
+                      <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <a
                         href={sponsor.websiteUrl}
                         target="_blank"
@@ -164,11 +176,11 @@ export const SponsorshipView = ({
               </div>
 
               {/* Card Footer with Amount & Public Web Toggle */}
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+              <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Contribution</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Commitment</span>
                   <span className="font-mono font-bold text-slate-900 text-sm">
-                    ₹{sponsor.contributionAmount.toLocaleString()}
+                    ₹{(sponsor.contributionAmount || 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -187,95 +199,74 @@ export const SponsorshipView = ({
                 </div>
               </div>
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
 
-      {/* Create Sponsor Modal */}
+      {/* Add Tournament Sponsor Modal */}
       <Modal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Add Tournament Sponsor"
-        subtitle={`Associate partnership with ${tournament.name} (Organized by Warhawks)`}
+        subtitle={`Associate partnership with ${tournament?.name || 'Tournament'} (Organized by Warhawks)`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Company / Brand Name</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">
+                Sponsor Name <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Apex Telecom"
+                placeholder="e.g. Apex Sports Technologies"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
+
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Sponsorship Tier</label>
-              <select
-                value={form.tier}
-                onChange={e => setForm({ ...form, tier: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              >
-                {SPONSOR_TIERS.map(tier => (
-                  <option key={tier} value={tier}>{tier}</option>
-                ))}
-              </select>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Contact Number <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="tel"
+                required
+                placeholder="+91 98200 12345"
+                value={form.contactNumber}
+                onChange={e => setForm({ ...form, contactNumber: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+              />
             </div>
+
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Financial Commitment (₹)</label>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Financial Commitment (₹) <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="number"
                 required
-                step={100000}
+                min={0}
+                step={50000}
                 value={form.contributionAmount}
                 onChange={e => setForm({ ...form, contributionAmount: parseInt(e.target.value, 10) || 0 })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
               />
             </div>
-            <div className="col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Benefits & Deliverables</label>
-              <textarea
-                rows={3}
-                required
-                value={form.benefitsDescription}
-                onChange={e => setForm({ ...form, benefitsDescription: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Contact Person</label>
-              <input
-                type="text"
-                required
-                placeholder="Name"
-                value={form.contactPerson}
-                onChange={e => setForm({ ...form, contactPerson: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
+
+            <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Contact Email</label>
               <input
                 type="email"
-                required
-                placeholder="email@company.com"
+                placeholder="sponsor@company.com"
                 value={form.contactEmail}
                 onChange={e => setForm({ ...form, contactEmail: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
               />
             </div>
-            <div className="col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Website URL</label>
-              <input
-                type="url"
-                value={form.websiteUrl}
-                onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div className="col-span-2 flex items-center gap-2 pt-2">
+
+            <div className="sm:col-span-2 flex items-center gap-2 pt-2">
               <input
                 type="checkbox"
                 id="displayWeb"
@@ -288,17 +279,18 @@ export const SponsorshipView = ({
               </label>
             </div>
           </div>
+
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setCreateModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
+              className="px-3.5 py-2 min-h-[38px] rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
+              className="px-4 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer"
             >
               Save Sponsor
             </button>
@@ -312,7 +304,7 @@ export const SponsorshipView = ({
           isOpen={true}
           onClose={() => setEditingSponsor(null)}
           title={`Edit ${editingSponsor.name}`}
-          subtitle="Update sponsorship deliverables"
+          subtitle="Update sponsor details and commitments"
         >
           <form
             onSubmit={e => {
@@ -322,49 +314,82 @@ export const SponsorshipView = ({
             }}
             className="space-y-4 text-xs"
           >
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">Company Name</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Sponsor Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
                   value={editingSponsor.name}
                   onChange={e => setEditingSponsor({ ...editingSponsor, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
+
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Contribution (₹)</label>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Contact Number <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={editingSponsor.contactNumber || ''}
+                  onChange={e => setEditingSponsor({ ...editingSponsor, contactNumber: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Financial Commitment (₹)</label>
                 <input
                   type="number"
-                  value={editingSponsor.contributionAmount}
+                  min={0}
+                  step={50000}
+                  value={editingSponsor.contributionAmount || 0}
                   onChange={e => setEditingSponsor({ ...editingSponsor, contributionAmount: parseInt(e.target.value, 10) || 0 })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                 />
               </div>
-              <div className="col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">Benefits</label>
-                <textarea
-                  rows={3}
-                  value={editingSponsor.benefitsDescription}
-                  onChange={e => setEditingSponsor({ ...editingSponsor, benefitsDescription: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+
+              <div className="sm:col-span-2">
+                <label className="block font-semibold text-slate-700 mb-1">Contact Email</label>
+                <input
+                  type="email"
+                  value={editingSponsor.contactEmail || ''}
+                  onChange={e => setEditingSponsor({ ...editingSponsor, contactEmail: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                 />
+              </div>
+
+              <div className="sm:col-span-2 flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="editDisplayWeb"
+                  checked={Boolean(editingSponsor.displayOnPublicWeb)}
+                  onChange={e => setEditingSponsor({ ...editingSponsor, displayOnPublicWeb: e.target.checked })}
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                />
+                <label htmlFor="editDisplayWeb" className="font-semibold text-slate-700 cursor-pointer">
+                  Display on Public Tournament Website
+                </label>
               </div>
             </div>
+
             <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setEditingSponsor(null)}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium cursor-pointer"
+                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
+                className="px-4 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
               >
-                Save
+                Save Changes
               </button>
             </div>
           </form>

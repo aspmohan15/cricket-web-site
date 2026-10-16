@@ -417,16 +417,14 @@ export const EditionsView = ({
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Format</label>
-              <select
+              <input
+                type="text"
+                required
+                placeholder="e.g. T20, ODI, 10-Over, Box Cricket"
                 value={formData.format}
                 onChange={e => setFormData({ ...formData, format: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="T20">T20 (20 Overs)</option>
-                <option value="ODI">One Day (50 Overs)</option>
-                <option value="10-Over">T10 (10 Overs)</option>
-                <option value="Box Cricket">Box Cricket</option>
-              </select>
+              />
             </div>
 
             <div>
@@ -581,6 +579,18 @@ export const EditionsView = ({
                   <option value="completed">Completed</option>
                   <option value="archived">Archived</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Format</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. T20, ODI, 10-Over, Box Cricket"
+                  value={editingEdition.format || ''}
+                  onChange={e => setEditingEdition({ ...editingEdition, format: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               <div>

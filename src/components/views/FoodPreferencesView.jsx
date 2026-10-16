@@ -8,85 +8,198 @@ import {
   CheckCheck,
   Filter,
   User,
-  Coffee
+  Users,
+  Coffee,
+  Search,
+  Edit,
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { exportToCsv } from '../../utils/csv';
-import { FOOD_PREFERENCES, MEAL_TYPES, MEAL_STATUSES } from '../../constants';
+import { FOOD_PREFERENCES, MEAL_TYPES } from '../../constants';
 
 export const FoodPreferencesView = ({
   tournament,
-  foodOrders,
-  teams,
-  players,
-  onCreateFoodOrder,
-  onUpdateOrderStatus
+  registrations = [],
+  onUpdateRegistrationCatering,
+  onUpdateRegistrationDetails
 }) => {
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [teamFilter, setTeamFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [mealFilter, setMealFilter] = useState('all');
+  const [dietFilter, setDietFilter] = useState('all');
+  const [guestFilter, setGuestFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [editingRegistration, setEditingRegistration] = useState(null);
 
-  const [form, setForm] = useState({
-    teamId: teams[0]?.id || '',
-    playerId: players[0]?.id || '',
-    mealType: 'Lunch',
-    date: new Date().toISOString().split('T')[0],
-    foodChoice: 'Veg',
-    quantity: 1,
-    status: 'confirmed',
-    specialInstructions: ''
-  });
+  // Helper to extract clean meal and guest requirements for any registration record
+  const getRegistrationMealData = (r) => {
+    const playerDiet = r.foodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg';
+    const playerHasBreakfast = Boolean(r.hasBreakfast);
+    const playerHasLunch = Boolean(r.hasLunch);
+    const guestCount = Math.max(0, parseInt(r.guestCount, 10) || 0);
+    const guestDiet = r.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg';
+    const guestHasBreakfast = guestCount > 0 ? Boolean(r.hasGuestBreakfast) : false;
+    const guestHasLunch = guestCount > 0 ? Boolean(r.hasGuestLunch) : false;
 
-  const handleCreateSubmit = (e) => {
-    e.preventDefault();
-    onCreateFoodOrder({
-      tournamentId: tournament.id,
-      teamId: form.teamId,
-      playerId: form.playerId,
-      mealType: form.mealType,
-      date: form.date,
-      foodChoice: form.foodChoice,
-      quantity: form.quantity,
-      status: form.status,
-      specialInstructions: form.specialInstructions
-    });
-    setCreateModalOpen(false);
+    const totalBreakfasts = (playerHasBreakfast ? 1 : 0) + (guestHasBreakfast ? guestCount : 0);
+    const totalLunches = (playerHasLunch ? 1 : 0) + (guestHasLunch ? guestCount : 0);
+
+    const vegBreakfasts =
+      (playerHasBreakfast && playerDiet === 'Veg' ? 1 : 0) +
+      (guestHasBreakfast && guestDiet === 'Veg' ? guestCount : 0);
+    const nonVegBreakfasts =
+      (playerHasBreakfast && playerDiet === 'Non-Veg' ? 1 : 0) +
+      (guestHasBreakfast && guestDiet === 'Non-Veg' ? guestCount : 0);
+
+    const vegLunches =
+      (playerHasLunch && playerDiet === 'Veg' ? 1 : 0) +
+      (guestHasLunch && guestDiet === 'Veg' ? guestCount : 0);
+    const nonVegLunches =
+      (playerHasLunch && playerDiet === 'Non-Veg' ? 1 : 0) +
+      (guestHasLunch && guestDiet === 'Non-Veg' ? guestCount : 0);
+
+    const totalHeadcount = 1 + guestCount;
+    const cateringStatus = r.cateringStatus || 'confirmed';
+
+    return {
+      registrationId: r.id,
+      fullName: r.fullName,
+      email: r.email,
+      phone: r.phone,
+      city: r.city,
+      primaryRole: r.primaryRole,
+      approvalStatus: r.approvalStatus,
+      cateringStatus,
+      playerDiet,
+      playerHasBreakfast,
+      playerHasLunch,
+      guestCount,
+      guestDiet,
+      guestHasBreakfast,
+      guestHasLunch,
+      totalBreakfasts,
+      totalLunches,
+      totalMeals: totalBreakfasts + totalLunches,
+      vegBreakfasts,
+      nonVegBreakfasts,
+      vegLunches,
+      nonVegLunches,
+      totalHeadcount
+    };
   };
 
-  const handleExportCateringSheet = () => {
-    const rows = foodOrders.map(f => {
-      const team = teams.find(t => t.id === f.teamId);
-      const player = players.find(p => p.id === f.playerId);
-      return {
-        Date: f.date,
-        MealType: f.mealType,
-        Team: team?.name || 'Unassigned',
-        Player: player?.name || 'Staff / Official',
-        DietaryPreference: f.foodChoice,
-        Quantity: f.quantity,
-        Status: f.status,
-        Instructions: f.specialInstructions || ''
-      };
-    });
-    exportToCsv(`${tournament.name.replace(/\s+/g, '_')}_Catering_Distribution_Sheet`, rows);
-  };
+  const parsedRegistrations = registrations.map(getRegistrationMealData);
 
-  // Diet statistics across all registered players
-  const dietStats = {
-    Veg: players.filter(p => p.foodPreference === 'Veg').length,
-    'Non-Veg': players.filter(p => p.foodPreference === 'Non-Veg').length,
-    Jain: players.filter(p => p.foodPreference === 'Jain').length,
-    Vegan: players.filter(p => p.foodPreference === 'Vegan').length,
-    Halal: players.filter(p => p.foodPreference === 'Halal').length
-  };
+  // High-Level Aggregate Metrics for Warhawks Catering Command
+  const aggregateMetrics = parsedRegistrations.reduce(
+    (acc, item) => {
+      acc.totalAthletes += 1;
+      acc.totalGuests += item.guestCount;
+      acc.totalHeadcount += item.totalHeadcount;
 
-  const filteredOrders = foodOrders.filter(o => {
-    if (teamFilter !== 'all' && o.teamId !== teamFilter) return false;
-    if (mealFilter !== 'all' && o.mealType !== mealFilter) return false;
-    if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+      acc.totalBreakfasts += item.totalBreakfasts;
+      acc.vegBreakfasts += item.vegBreakfasts;
+      acc.nonVegBreakfasts += item.nonVegBreakfasts;
+
+      acc.totalLunches += item.totalLunches;
+      acc.vegLunches += item.vegLunches;
+      acc.nonVegLunches += item.nonVegLunches;
+
+      if (item.playerDiet === 'Veg') acc.vegAttendees += 1;
+      else acc.nonVegAttendees += 1;
+
+      if (item.guestCount > 0) {
+        if (item.guestDiet === 'Veg') acc.vegAttendees += item.guestCount;
+        else acc.nonVegAttendees += item.guestCount;
+      }
+
+      return acc;
+    },
+    {
+      totalAthletes: 0,
+      totalGuests: 0,
+      totalHeadcount: 0,
+      totalBreakfasts: 0,
+      vegBreakfasts: 0,
+      nonVegBreakfasts: 0,
+      totalLunches: 0,
+      vegLunches: 0,
+      nonVegLunches: 0,
+      vegAttendees: 0,
+      nonVegAttendees: 0
+    }
+  );
+
+  // Filtered registrations
+  const filteredList = parsedRegistrations.filter(item => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match =
+        item.fullName?.toLowerCase().includes(q) ||
+        item.email?.toLowerCase().includes(q) ||
+        item.phone?.toLowerCase().includes(q) ||
+        item.city?.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    if (mealFilter === 'breakfast' && item.totalBreakfasts === 0) return false;
+    if (mealFilter === 'lunch' && item.totalLunches === 0) return false;
+    if (mealFilter === 'both' && (item.totalBreakfasts === 0 || item.totalLunches === 0)) return false;
+
+    if (dietFilter === 'veg' && item.playerDiet !== 'Veg' && item.guestDiet !== 'Veg') return false;
+    if (dietFilter === 'non-veg' && item.playerDiet !== 'Non-Veg' && item.guestDiet !== 'Non-Veg') return false;
+
+    if (guestFilter === 'with_guests' && item.guestCount === 0) return false;
+    if (guestFilter === 'solo' && item.guestCount > 0) return false;
+
+    if (statusFilter !== 'all' && item.cateringStatus !== statusFilter) return false;
+
     return true;
   });
+
+  const handleExportCateringSheet = () => {
+    const rows = parsedRegistrations.map(r => ({
+      Tournament: tournament?.name || 'Tournament',
+      'Athlete Name': r.fullName,
+      Email: r.email,
+      Phone: r.phone,
+      'Registration Status': r.approvalStatus,
+      'Athlete Diet': r.playerDiet,
+      'Athlete Breakfast': r.playerHasBreakfast ? 'Yes' : 'No',
+      'Athlete Lunch': r.playerHasLunch ? 'Yes' : 'No',
+      'Guest Count': r.guestCount,
+      'Guest Diet': r.guestCount > 0 ? r.guestDiet : 'N/A',
+      'Guest Breakfast': r.guestCount > 0 ? (r.guestHasBreakfast ? 'Yes' : 'No') : 'N/A',
+      'Guest Lunch': r.guestCount > 0 ? (r.guestHasLunch ? 'Yes' : 'No') : 'N/A',
+      'Total Breakfasts': r.totalBreakfasts,
+      'Total Lunches': r.totalLunches,
+      'Total Combined Meals': r.totalMeals,
+      'Total Headcount': r.totalHeadcount,
+      'Catering Status': r.cateringStatus
+    }));
+
+    exportToCsv(
+      `${(tournament?.name || 'Warhawks').replace(/\s+/g, '_')}_Player_Guest_Catering_Requirements`,
+      rows
+    );
+  };
+
+  const handleSaveEditModal = (e) => {
+    e.preventDefault();
+    if (!editingRegistration) return;
+    onUpdateRegistrationDetails?.(editingRegistration.registrationId, {
+      foodPreference: editingRegistration.playerDiet,
+      hasBreakfast: editingRegistration.playerHasBreakfast,
+      hasLunch: editingRegistration.playerHasLunch,
+      guestCount: editingRegistration.guestCount,
+      guestFoodPreference: editingRegistration.guestDiet,
+      hasGuestBreakfast: editingRegistration.hasGuestBreakfast,
+      hasGuestLunch: editingRegistration.hasGuestLunch,
+      cateringStatus: editingRegistration.cateringStatus
+    });
+    setEditingRegistration(null);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">
@@ -95,405 +208,588 @@ export const FoodPreferencesView = ({
         <div>
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-semibold mb-1 border border-emerald-200">
             <span>🦅 Warhawks Catering Command</span>
+            <span>·</span>
+            <span>Registration-Derived Logistics</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Player Food & Dietary Management</h1>
+          <h1 className="text-xl font-bold text-slate-900">Food & Dietary Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Track nutritional preferences, match-day catering buffets, and distribution status for {tournament?.name} (Organized by Warhawks).
+            Aggregated match-day nutritional requisitions for players and accompanying guests collected from official registration applications for {tournament?.name || 'Tournament'}.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportCateringSheet}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer w-full sm:w-auto"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export Sheet</span>
-          </button>
-          <button
-            onClick={() => {
-              setForm({
-                teamId: teams[0]?.id || '',
-                playerId: players[0]?.id || '',
-                mealType: 'Lunch',
-                date: new Date().toISOString().split('T')[0],
-                foodChoice: 'Veg',
-                quantity: 1,
-                status: 'confirmed',
-                specialInstructions: ''
-              });
-              setCreateModalOpen(true);
-            }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Log Meal Order</span>
+            <span>Export Catering Requisition Sheet</span>
           </button>
         </div>
       </div>
 
-      {/* Dietary Census Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
-        {FOOD_PREFERENCES.map(diet => (
-          <div
-            key={diet}
-            className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-xs text-center last:col-span-2 sm:last:col-span-1"
-          >
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 block uppercase tracking-wider truncate">
-              {diet}
+      {/* Primary KPI Metrics Canvas */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Total Headcount */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Total Headcount
             </span>
-            <span className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1 block">
-              {dietStats[diet] || 0}
-            </span>
-            <span className="text-[10px] text-slate-400">Athletes</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+              <Users className="w-4 h-4" />
+            </div>
           </div>
-        ))}
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900">
+              {aggregateMetrics.totalHeadcount}
+            </span>
+            <span className="text-xs text-slate-500">persons</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-2 border-t border-slate-100 pt-2">
+            <span>{aggregateMetrics.totalAthletes} Athletes</span>
+            <span>·</span>
+            <span className="text-emerald-700 font-semibold">{aggregateMetrics.totalGuests} Guests</span>
+          </div>
+        </div>
+
+        {/* Total Breakfast Demand */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Breakfast Requisition
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700">
+              <Coffee className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900">
+              {aggregateMetrics.totalBreakfasts}
+            </span>
+            <span className="text-xs text-slate-500">portions</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-1.5 border-t border-slate-100 pt-2">
+            <span className="text-emerald-700 font-semibold">{aggregateMetrics.vegBreakfasts} Veg</span>
+            <span>·</span>
+            <span className="text-amber-800 font-semibold">{aggregateMetrics.nonVegBreakfasts} Non-Veg</span>
+          </div>
+        </div>
+
+        {/* Total Lunch Demand */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Lunch Requisition
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
+              <Utensils className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900">
+              {aggregateMetrics.totalLunches}
+            </span>
+            <span className="text-xs text-slate-500">portions</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-1.5 border-t border-slate-100 pt-2">
+            <span className="text-emerald-700 font-semibold">{aggregateMetrics.vegLunches} Veg</span>
+            <span>·</span>
+            <span className="text-amber-800 font-semibold">{aggregateMetrics.nonVegLunches} Non-Veg</span>
+          </div>
+        </div>
+
+        {/* Overall Dietary Split */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Dietary Census
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-700">
+              <Sparkles className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1 bg-emerald-50 p-2 rounded-lg border border-emerald-100 text-center">
+              <span className="block text-[10px] uppercase font-bold text-emerald-800">Veg</span>
+              <span className="text-lg font-bold font-mono text-emerald-950">{aggregateMetrics.vegAttendees}</span>
+            </div>
+            <div className="flex-1 bg-amber-50 p-2 rounded-lg border border-amber-100 text-center">
+              <span className="block text-[10px] uppercase font-bold text-amber-800">Non-Veg</span>
+              <span className="text-lg font-bold font-mono text-amber-950">{aggregateMetrics.nonVegAttendees}</span>
+            </div>
+          </div>
+          <div className="mt-2 text-[10px] text-slate-400 text-center">
+            Standardized two-diet model (Veg / Non-Veg)
+          </div>
+        </div>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-          {/* Team Filter */}
-          <select
-            value={teamFilter}
-            onChange={e => setTeamFilter(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
-          >
-            <option value="all">All Teams</option>
-            {teams.map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+      {/* Filter and Search Bar */}
+      <div className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+        <div className="relative w-full md:w-72">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="Search athlete, email, city..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
 
-          {/* Meal Type Filter */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
+          {/* Meal Filter */}
           <select
             value={mealFilter}
             onChange={e => setMealFilter(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
           >
             <option value="all">All Meals</option>
-            {MEAL_TYPES.map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
+            <option value="breakfast">Breakfast Requested</option>
+            <option value="lunch">Lunch Requested</option>
+            <option value="both">Both Breakfast & Lunch</option>
           </select>
 
-          {/* Status Filter */}
+          {/* Diet Filter */}
+          <select
+            value={dietFilter}
+            onChange={e => setDietFilter(e.target.value)}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+          >
+            <option value="all">All Diets</option>
+            <option value="veg">Veg Only</option>
+            <option value="non-veg">Non-Veg Only</option>
+          </select>
+
+          {/* Guests Filter */}
+          <select
+            value={guestFilter}
+            onChange={e => setGuestFilter(e.target.value)}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+          >
+            <option value="all">All Registrations</option>
+            <option value="with_guests">With Guests</option>
+            <option value="solo">Solo Athletes</option>
+          </select>
+
+          {/* Catering Status Filter */}
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
           >
             <option value="all">All Statuses</option>
-            {MEAL_STATUSES.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            <option value="confirmed">Confirmed</option>
+            <option value="served">Served</option>
+            <option value="requested">Requested</option>
           </select>
         </div>
       </div>
 
-      {/* Mobile Meal Order Cards (Mobile < 768px) */}
+      {/* Mobile Card List (visible on mobile < 768px) */}
       <div className="md:hidden space-y-3">
-        {filteredOrders.length === 0 ? (
+        {filteredList.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            No meal orders match this filter.
+            No player registration records match the current filter criteria.
           </div>
         ) : (
-          filteredOrders.map(order => {
-            const team = teams.find(t => t.id === order.teamId);
-            const player = players.find(p => p.id === order.playerId);
+          filteredList.map(item => (
+            <div
+              key={item.registrationId}
+              className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-slate-900 text-sm truncate">{item.fullName}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">{item.email} · {item.city}</div>
+                </div>
 
-            return (
-              <div
-                key={order.id}
-                className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-2.5"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 pr-1">
-                    <div className="font-bold text-slate-900 text-sm truncate">{player?.name || 'Staff Member'}</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5 truncate">{team?.name || 'Tournament Official'}</div>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize shrink-0 ${
+                    item.cateringStatus === 'served'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : item.cateringStatus === 'confirmed'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {item.cateringStatus}
+                </span>
+              </div>
+
+              {/* Player and Guest Requirements Breakdown */}
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                <div className="bg-slate-50 p-2 rounded-lg">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                    Athlete Requisition
+                  </span>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      item.playerDiet === 'Veg' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {item.playerDiet}
+                    </span>
+                    <span className="text-slate-700 text-[11px]">
+                      {[item.playerHasBreakfast ? 'Breakfast' : null, item.playerHasLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'}
+                    </span>
                   </div>
+                </div>
 
-                  <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize shrink-0 ${
-                      order.status === 'served'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : order.status === 'confirmed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {order.status}
+                <div className="bg-slate-50 p-2 rounded-lg">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                    Accompanying Guests
+                  </span>
+                  <div className="mt-1">
+                    {item.guestCount > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          item.guestDiet === 'Veg' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {item.guestCount} {item.guestDiet}
+                        </span>
+                        <span className="text-slate-700 text-[11px]">
+                          {[item.guestHasBreakfast ? 'Breakfast' : null, item.guestHasLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-[11px]">0 Guests</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-span-2 bg-emerald-50/60 border border-emerald-100 p-2 rounded-lg flex items-center justify-between text-xs">
+                  <span className="font-semibold text-emerald-950">Party Portions:</span>
+                  <span className="font-mono font-bold text-emerald-900">
+                    {item.totalBreakfasts} Breakfast(s) · {item.totalLunches} Lunch(es)
                   </span>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Meal Type</span>
-                    <span className="font-semibold text-slate-800">{order.mealType}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Diet Choice</span>
-                    <span className="text-slate-700 font-medium">{order.foodChoice} ({order.quantity} portion)</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Instructions</span>
-                    <span className="text-slate-600 truncate block">{order.specialInstructions || 'Standard sports buffet'}</span>
-                  </div>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                <button
+                  onClick={() => setEditingRegistration(item)}
+                  className="px-2.5 py-1.5 min-h-[34px] rounded border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer flex items-center gap-1"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit Needs</span>
+                </button>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                  <span className="text-[11px] text-slate-400 font-mono">{order.date}</span>
-
-                  <div className="flex items-center gap-1.5">
-                    {order.status !== 'served' && (
-                      <button
-                        onClick={() => onUpdateOrderStatus(order.id, 'served')}
-                        className="px-3 py-1.5 min-h-[34px] rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors cursor-pointer"
-                      >
-                        Mark Served
-                      </button>
-                    )}
-                    {order.status === 'requested' && (
-                      <button
-                        onClick={() => onUpdateOrderStatus(order.id, 'confirmed')}
-                        className="px-3 py-1.5 min-h-[34px] rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Confirm
-                      </button>
-                    )}
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  {item.cateringStatus !== 'served' && (
+                    <button
+                      onClick={() => onUpdateRegistrationCatering?.(item.registrationId, 'served')}
+                      className="px-3 py-1.5 min-h-[34px] rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Mark Served
+                    </button>
+                  )}
+                  {item.cateringStatus === 'requested' && (
+                    <button
+                      onClick={() => onUpdateRegistrationCatering?.(item.registrationId, 'confirmed')}
+                      className="px-3 py-1.5 min-h-[34px] rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                    >
+                      Confirm
+                    </button>
+                  )}
                 </div>
               </div>
-            );
-          })
+            </div>
+          ))
         )}
       </div>
 
-      {/* Desktop Meal Orders Table (md+) */}
+      {/* Desktop Roster Table (md+) */}
       <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Beneficiary Athlete</th>
-                <th className="py-3 px-4">Meal Window</th>
-                <th className="py-3 px-4">Diet Choice</th>
-                <th className="py-3 px-4">Date & Qty</th>
-                <th className="py-3 px-4">Special Instructions</th>
-                <th className="py-3 px-4">Fulfillment Status</th>
-                <th className="py-3 px-4 text-right">Quick Update</th>
+                <th className="py-3 px-4">Player Requisition</th>
+                <th className="py-3 px-4">Accompanying Guests</th>
+                <th className="py-3 px-4">Combined Meal Demand</th>
+                <th className="py-3 px-4">Headcount</th>
+                <th className="py-3 px-4">Catering Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.length === 0 ? (
+              {filteredList.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-400">
-                    No meal records found for selected criteria.
+                    No player registration records match the current filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map(order => {
-                  const team = teams.find(t => t.id === order.teamId);
-                  const player = players.find(p => p.id === order.playerId);
+                filteredList.map(item => (
+                  <tr key={item.registrationId} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">{item.fullName}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">{item.email}</div>
+                      <div className="text-[10px] text-slate-400">{item.phone} · {item.city}</div>
+                    </td>
 
-                  return (
-                    <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{player?.name || 'Staff Member'}</div>
-                        <div className="text-[11px] text-slate-400">{team?.name}</div>
-                      </td>
-
-                      <td className="py-3.5 px-4 font-semibold text-slate-800">
-                        {order.mealType}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
-                          {order.foodChoice}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        <div>{order.date}</div>
-                        <div className="text-[10px] text-slate-400">{order.quantity} portion(s)</div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
-                        {order.specialInstructions || 'Standard sports buffet'}
-                      </td>
-
-                      <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-1.5">
                         <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded capitalize ${
-                            order.status === 'served'
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            item.playerDiet === 'Veg'
                               ? 'bg-emerald-100 text-emerald-800'
-                              : order.status === 'confirmed'
-                              ? 'bg-blue-100 text-blue-800'
                               : 'bg-amber-100 text-amber-800'
                           }`}
                         >
-                          {order.status}
+                          {item.playerDiet}
                         </span>
-                      </td>
+                        <span className="font-medium text-slate-700">
+                          {[item.playerHasBreakfast ? 'Breakfast' : null, item.playerHasLunch ? 'Lunch' : null]
+                            .filter(Boolean)
+                            .join(', ') || 'No Meals'}
+                        </span>
+                      </div>
+                    </td>
 
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {order.status !== 'served' && (
-                            <button
-                              onClick={() => onUpdateOrderStatus(order.id, 'served')}
-                              className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                    <td className="py-3.5 px-4">
+                      {item.guestCount > 0 ? (
+                        <div>
+                          <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                item.guestDiet === 'Veg'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
                             >
-                              Mark Served
-                            </button>
-                          )}
-                          {order.status === 'requested' && (
-                            <button
-                              onClick={() => onUpdateOrderStatus(order.id, 'confirmed')}
-                              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
-                            >
-                              Confirm
-                            </button>
-                          )}
+                              {item.guestCount} {item.guestDiet}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            {[item.guestHasBreakfast ? 'Breakfast' : null, item.guestHasLunch ? 'Lunch' : null]
+                              .filter(Boolean)
+                              .join(', ') || 'No Meals'}
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">0 Guests (Solo)</span>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-4 font-mono">
+                      <div className="font-bold text-slate-900">{item.totalBreakfasts} Breakfast(s)</div>
+                      <div className="text-slate-600 text-[11px]">{item.totalLunches} Lunch(es)</div>
+                    </td>
+
+                    <td className="py-3.5 px-4 font-mono font-semibold text-slate-700">
+                      {item.totalHeadcount} person(s)
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${
+                          item.cateringStatus === 'served'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : item.cateringStatus === 'confirmed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {item.cateringStatus}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setEditingRegistration(item)}
+                          className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                          title="Edit meal requirements"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        {item.cateringStatus !== 'served' && (
+                          <button
+                            onClick={() => onUpdateRegistrationCatering?.(item.registrationId, 'served')}
+                            className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            Mark Served
+                          </button>
+                        )}
+                        {item.cateringStatus === 'requested' && (
+                          <button
+                            onClick={() => onUpdateRegistrationCatering?.(item.registrationId, 'confirmed')}
+                            className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                          >
+                            Confirm
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Log Meal Modal */}
-      <Modal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        title="Log Player Meal Order"
-        subtitle={`Match day catering reservation for ${tournament.name}`}
-      >
-        <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Edit Registration Meal Requirements Modal */}
+      {editingRegistration && (
+        <Modal
+          isOpen={true}
+          onClose={() => setEditingRegistration(null)}
+          title={`Edit Meal Requisition: ${editingRegistration.fullName}`}
+          subtitle="Update food preference and breakfast/lunch selections for player and guests"
+          maxWidth="lg"
+        >
+          <form onSubmit={handleSaveEditModal} className="space-y-4 text-xs">
+            {/* Player Meal Options */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
+                <Utensils className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Player Dietary & Meal Options</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Dietary Preference</label>
+                  <select
+                    value={editingRegistration.playerDiet}
+                    onChange={e => setEditingRegistration({ ...editingRegistration, playerDiet: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white"
+                  >
+                    <option value="Veg">Veg (Vegetarian)</option>
+                    <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Player Meals</label>
+                  <div className="flex items-center gap-4 pt-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={editingRegistration.playerHasBreakfast}
+                        onChange={e => setEditingRegistration({ ...editingRegistration, playerHasBreakfast: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span>Breakfast</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={editingRegistration.playerHasLunch}
+                        onChange={e => setEditingRegistration({ ...editingRegistration, playerHasLunch: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span>Lunch</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Guest Meal Options */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Accompanying Guests & Dietary Options</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Guest Number</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={editingRegistration.guestCount}
+                    onChange={e => {
+                      const count = Math.max(0, parseInt(e.target.value, 10) || 0);
+                      setEditingRegistration({
+                        ...editingRegistration,
+                        guestCount: count,
+                        hasGuestBreakfast: count > 0 ? editingRegistration.hasGuestBreakfast : false,
+                        hasGuestLunch: count > 0 ? editingRegistration.hasGuestLunch : false
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Guest Diet</label>
+                  <select
+                    disabled={editingRegistration.guestCount === 0}
+                    value={editingRegistration.guestDiet}
+                    onChange={e => setEditingRegistration({ ...editingRegistration, guestDiet: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white disabled:opacity-50"
+                  >
+                    <option value="Veg">Veg (Vegetarian)</option>
+                    <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Guest Meals</label>
+                  <div className="flex items-center gap-3 pt-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        disabled={editingRegistration.guestCount === 0}
+                        checked={editingRegistration.hasGuestBreakfast}
+                        onChange={e => setEditingRegistration({ ...editingRegistration, hasGuestBreakfast: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
+                      />
+                      <span>Breakfast</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        disabled={editingRegistration.guestCount === 0}
+                        checked={editingRegistration.hasGuestLunch}
+                        onChange={e => setEditingRegistration({ ...editingRegistration, hasGuestLunch: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
+                      />
+                      <span>Lunch</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Catering Status Option */}
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Franchise Team</label>
+              <label className="block font-semibold text-slate-700 mb-1">Catering Fulfillment Status</label>
               <select
-                value={form.teamId}
-                onChange={e => {
-                  const tId = e.target.value;
-                  const firstP = players.find(p => p.teamId === tId);
-                  setForm({ ...form, teamId: tId, playerId: firstP?.id || '' });
-                }}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                value={editingRegistration.cateringStatus}
+                onChange={e => setEditingRegistration({ ...editingRegistration, cateringStatus: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
               >
-                {teams.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
+                <option value="requested">Requested</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="served">Served</option>
               </select>
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Player</label>
-              <select
-                value={form.playerId}
-                onChange={e => {
-                  const p = players.find(x => x.id === e.target.value);
-                  setForm({
-                    ...form,
-                    playerId: e.target.value,
-                    foodChoice: p?.foodPreference || form.foodChoice
-                  });
-                }}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setEditingRegistration(null)}
+                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
               >
-                {players
-                  .filter(p => !form.teamId || p.teamId === form.teamId)
-                  .map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.foodPreference})
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Meal Window</label>
-              <select
-                value={form.mealType}
-                onChange={e => setForm({ ...form, mealType: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer"
               >
-                {MEAL_TYPES.map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                Save Requirements
+              </button>
             </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Dietary Category</label>
-              <select
-                value={form.foodChoice}
-                onChange={e => setForm({ ...form, foodChoice: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              >
-                {FOOD_PREFERENCES.map(f => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Service Date</label>
-              <input
-                type="date"
-                required
-                value={form.date}
-                onChange={e => setForm({ ...form, date: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Portion Quantity</label>
-              <input
-                type="number"
-                min={1}
-                max={50}
-                required
-                value={form.quantity}
-                onChange={e => setForm({ ...form, quantity: parseInt(e.target.value, 10) || 1 })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Special Dietary Instructions</label>
-              <input
-                type="text"
-                placeholder="e.g. Gluten-free bread, no onion/garlic, hydration electrolytes"
-                value={form.specialInstructions}
-                onChange={e => setForm({ ...form, specialInstructions: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setCreateModalOpen(false)}
-              className="min-h-[40px] px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
-            >
-              Save Meal Order
-            </button>
-          </div>
-        </form>
-      </Modal>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
