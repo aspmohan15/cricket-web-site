@@ -9,7 +9,10 @@ import {
   Calendar,
   Receipt,
   Users,
-  FileSpreadsheet
+  FileSpreadsheet,
+  LogIn,
+  LogOut,
+  Lock
 } from 'lucide-react';
 
 export const TopBar = ({
@@ -20,7 +23,9 @@ export const TopBar = ({
   currentUser,
   onSwitchRole,
   onOpenMobileSidebar,
-  onQuickAction
+  onQuickAction,
+  onOpenOrganizerLogin,
+  onLogout
 }) => {
   const [editionDropdownOpen, setEditionDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -145,7 +150,7 @@ export const TopBar = ({
                 <span className="sm:hidden font-mono">Ed. {activeTournament.editionNumber}</span>
                 <span className="hidden sm:inline">Ed. {activeTournament.editionNumber}: {activeTournament.name}</span>
               </>
-            ) : 'Select'}
+            ) : (tournaments.length > 0 ? 'Select Edition' : 'No Tournaments')}
           </span>
           <ChevronDown className="w-3 h-3 text-slate-500 shrink-0" />
         </button>
@@ -157,32 +162,39 @@ export const TopBar = ({
               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Host</span>
             </div>
             <div className="max-h-64 overflow-y-auto py-1">
-              {tournaments.map(t => {
-                const isSelected = t.id === activeTournament?.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      onSelectTournament(t.id);
-                      setEditionDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors cursor-pointer ${
-                      isSelected ? 'bg-emerald-50 text-emerald-900 font-semibold' : 'text-slate-700'
-                    }`}
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-slate-400 shrink-0">Ed. {t.editionNumber}</span>
-                        <span className="truncate">{t.name}</span>
+              {tournaments.length === 0 ? (
+                <div className="px-3.5 py-4 text-center text-xs text-slate-500">
+                  <p className="font-semibold text-slate-700">No tournaments available yet.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Create your first edition in Tournament Editions to begin.</p>
+                </div>
+              ) : (
+                tournaments.map(t => {
+                  const isSelected = t.id === activeTournament?.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        onSelectTournament(t.id);
+                        setEditionDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors cursor-pointer ${
+                        isSelected ? 'bg-emerald-50 text-emerald-900 font-semibold' : 'text-slate-700'
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-slate-400 shrink-0">Ed. {t.editionNumber}</span>
+                          <span className="truncate">{t.name}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {t.year} · {t.city} · {t.status}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        {t.year} · {t.city} · {t.status}
-                      </div>
-                    </div>
-                    {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
-                  </button>
-                );
-              })}
+                      {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         )}
@@ -295,64 +307,85 @@ export const TopBar = ({
           )}
         </div>
 
-        {/* User Role Switcher Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setRoleDropdownOpen(!roleDropdownOpen);
-              setEditionDropdownOpen(false);
-              setQuickActionOpen(false);
-            }}
-            className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 min-h-[38px] rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            aria-label="User Profile and Role Switcher"
-          >
-            <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs ring-2 ring-emerald-500/20 shrink-0">
-              {currentUser.name.split(' ').map(n => n[0]).join('')}
-            </div>
-            <div className="hidden md:block text-left max-w-[120px]">
-              <div className="text-xs font-semibold text-slate-800 leading-tight truncate">
-                {currentUser.name}
+        {/* User Role & Auth Action Zone */}
+        {currentUser.role === 'organizer' ? (
+          <div className="relative flex items-center gap-2">
+            <button
+              onClick={() => {
+                setRoleDropdownOpen(!roleDropdownOpen);
+                setEditionDropdownOpen(false);
+                setQuickActionOpen(false);
+              }}
+              className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 min-h-[38px] rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Organizer Profile and Settings"
+            >
+              <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs ring-2 ring-emerald-500/20 shrink-0">
+                🦅
               </div>
-              <div className="text-[10px] text-emerald-700 font-medium capitalize truncate">
-                {currentUser.role.replace('_', ' ')}
+              <div className="hidden md:block text-left max-w-[130px]">
+                <div className="text-xs font-semibold text-slate-800 leading-tight truncate">
+                  {currentUser.name}
+                </div>
+                <div className="text-[10px] text-emerald-700 font-bold capitalize truncate flex items-center gap-1">
+                  <span>Organizer</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
               </div>
-            </div>
-            <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block shrink-0" />
-          </button>
+              <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block shrink-0" />
+            </button>
 
-          {roleDropdownOpen && (
-            <div className="fixed inset-x-3 top-16 mt-1 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-72 max-w-sm sm:max-w-none bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs">
-              <div className="px-3.5 py-2 border-b border-slate-100">
-                <div className="font-semibold text-slate-900 truncate">{currentUser.name}</div>
-                <div className="text-[11px] text-slate-500 truncate">{currentUser.email}</div>
-              </div>
-              <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Simulate Role (RBAC)
-              </div>
-              {roles.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    onSwitchRole(r.id);
-                    setRoleDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-3.5 py-2.5 flex items-start justify-between hover:bg-slate-50 cursor-pointer ${
-                    currentUser.role === r.id ? 'bg-emerald-50/70 font-semibold text-emerald-950' : 'text-slate-700'
-                  }`}
-                >
-                  <div className="pr-2 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span className="truncate">{r.label}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{r.desc}</div>
+            {/* Direct Logout Button */}
+            <button
+              onClick={onLogout}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg border border-slate-200 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-medium transition-colors cursor-pointer"
+              title="Log Out of Organizer Console"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+
+            {roleDropdownOpen && (
+              <div className="fixed inset-x-3 top-16 mt-1 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-72 max-w-sm sm:max-w-none bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs">
+                <div className="px-3.5 py-2 border-b border-slate-100">
+                  <div className="font-semibold text-slate-900 truncate">{currentUser.name}</div>
+                  <div className="text-[11px] text-slate-500 truncate">{currentUser.email || currentUser.mobile}</div>
+                  <div className="text-[10px] text-emerald-700 font-mono mt-0.5 font-bold">
+                    Authenticated Organizer Session
                   </div>
-                  {currentUser.role === r.id && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                </div>
+
+                <div className="p-2 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      setRoleDropdownOpen(false);
+                      onLogout?.();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>End Organizer Session (Log Out)</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="hidden md:inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 text-slate-600 text-[11px] font-medium">
+              <span>Public Player Portal</span>
+            </span>
+
+            <button
+              onClick={onOpenOrganizerLogin}
+              className="flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Organizer Sign In</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

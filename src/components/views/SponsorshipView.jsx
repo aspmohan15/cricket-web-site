@@ -91,8 +91,10 @@ export const SponsorshipView = ({
       {/* Sponsors Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {sponsors.length === 0 ? (
-          <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            No sponsors registered yet for this edition. Click "Add Sponsor" to add a tournament sponsor.
+          <div className="col-span-full bg-white rounded-xl border border-dashed border-slate-200 p-8 sm:p-12 text-center text-xs text-slate-500">
+            <BadgePercent className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="font-semibold text-slate-800">No sponsors added yet.</p>
+            <p className="text-slate-400 mt-1">Add tournament partners and commercial sponsors to manage contributions.</p>
           </div>
         ) : (
           sponsors.map(sponsor => (

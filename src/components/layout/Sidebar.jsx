@@ -17,7 +17,10 @@ import {
   Settings,
   ChevronRight,
   Sparkles,
-  X
+  X,
+  LogIn,
+  LogOut,
+  Lock
 } from 'lucide-react';
 
 export const Sidebar = ({
@@ -26,7 +29,9 @@ export const Sidebar = ({
   activeTournament,
   currentUser,
   isOpenMobile,
-  onCloseMobile
+  onCloseMobile,
+  onOpenOrganizerLogin,
+  onLogout
 }) => {
   const isOrganizer = currentUser?.role === 'organizer';
 
@@ -167,12 +172,44 @@ export const Sidebar = ({
           })}
         </nav>
 
-        {/* Footer Info with safe-area bottom */}
-        <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <span className="font-medium text-slate-400">Warhawks Operations</span>
-          <span className="flex items-center gap-1 text-emerald-400 font-mono font-medium text-[10px]">
-            <Sparkles className="w-3 h-3" /> Certified
-          </span>
+        {/* Auth Action in Sidebar Footer */}
+        <div className="p-3 border-t border-slate-800 space-y-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {isOrganizer ? (
+            <button
+              onClick={() => {
+                onLogout?.();
+                onCloseMobile();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/80 hover:bg-rose-900/40 text-slate-300 hover:text-rose-300 transition-colors text-xs font-semibold cursor-pointer border border-slate-700/50"
+            >
+              <span className="flex items-center gap-2">
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">Organizer</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onOpenOrganizerLogin?.();
+                onCloseMobile();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 transition-colors text-xs font-semibold cursor-pointer border border-emerald-800/40"
+            >
+              <span className="flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Organizer Sign In</span>
+              </span>
+              <span className="text-[10px] text-emerald-400 font-mono">Host</span>
+            </button>
+          )}
+
+          <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+            <span className="font-medium text-slate-400">Warhawks Operations</span>
+            <span className="flex items-center gap-1 text-emerald-400 font-mono font-medium text-[10px]">
+              <Sparkles className="w-3 h-3" /> Certified
+            </span>
+          </div>
         </div>
       </aside>
     </>

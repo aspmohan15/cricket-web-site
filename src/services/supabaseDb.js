@@ -18,7 +18,7 @@ const mapTournamentFromDb = (row) => ({
   endDate: row.end_date,
   venue: row.venue,
   city: row.city,
-  registrationOpen: row.registration_open,
+  registrationOpen: Boolean(row.registration_open),
   registrationStartDate: row.registration_start_date,
   registrationEndDate: row.registration_end_date,
   totalBudgetPointsPerTeam: Number(row.total_budget_points_per_team),
@@ -28,7 +28,10 @@ const mapTournamentFromDb = (row) => ({
   minSquadSize: row.min_squad_size,
   maxOverseasPlayers: row.max_overseas_players,
   description: row.description,
-  isArchived: row.is_archived,
+  upiQrCodeUrl: row.upi_qr_code_url || '',
+  upiId: row.upi_id || '',
+  registrationFee: row.registration_fee ? Number(row.registration_fee) : 1500,
+  isArchived: Boolean(row.is_archived),
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
@@ -69,8 +72,8 @@ const mapPlayerFromDb = (row) => ({
   basePrice: Number(row.base_price),
   soldPrice: row.sold_price ? Number(row.sold_price) : null,
   auctionStatus: row.auction_status,
-  isCaptain: row.is_captain,
-  isOverseas: row.is_overseas,
+  isCaptain: Boolean(row.is_captain),
+  isOverseas: Boolean(row.is_overseas),
   email: row.email,
   phone: row.phone,
   city: row.city,
@@ -111,14 +114,14 @@ const mapMatchFromDb = (row) => ({
   winnerId: row.winner_id,
   resultSummary: row.result_summary,
   manOfTheMatchPlayerId: row.man_of_the_match_player_id,
-  isImported: row.is_imported,
+  isImported: Boolean(row.is_imported),
   importSource: row.import_source,
   cricheroesMatchId: row.cricheroes_match_id,
   createdAt: row.created_at
 });
 
 /**
- * Normalizes a sponsor record from database row (includes name, contact_number, contribution_amount)
+ * Normalizes a sponsor record from database row
  */
 const mapSponsorFromDb = (row) => ({
   id: row.id,
@@ -130,13 +133,13 @@ const mapSponsorFromDb = (row) => ({
   tier: row.tier || 'Official Partner',
   benefitsDescription: row.benefits_description,
   websiteUrl: row.website_url,
-  isActive: row.is_active,
-  displayOnPublicWeb: row.display_on_public_web,
+  isActive: Boolean(row.is_active),
+  displayOnPublicWeb: Boolean(row.display_on_public_web),
   createdAt: row.created_at
 });
 
 /**
- * Normalizes a registration record from database row (includes player and guest dietary preferences and meal options)
+ * Normalizes a registration record from database row
  */
 const mapRegistrationFromDb = (row) => ({
   id: row.id,
@@ -155,9 +158,21 @@ const mapRegistrationFromDb = (row) => ({
   hasBreakfast: Boolean(row.has_breakfast),
   hasLunch: Boolean(row.has_lunch),
   guestCount: Number(row.guest_count) || 0,
+  guests: Array.isArray(row.guests)
+    ? row.guests
+    : typeof row.guests === 'string'
+    ? (() => {
+        try {
+          return JSON.parse(row.guests);
+        } catch {
+          return [];
+        }
+      })()
+    : [],
   guestFoodPreference: row.guest_food_preference || 'Veg',
   hasGuestBreakfast: Boolean(row.has_guest_breakfast),
   hasGuestLunch: Boolean(row.has_guest_lunch),
+  paymentReference: row.payment_reference || '',
   cateringStatus: row.catering_status || 'requested',
   approvalStatus: row.approval_status,
   paymentStatus: row.payment_status,
@@ -165,6 +180,113 @@ const mapRegistrationFromDb = (row) => ({
   applicationDate: row.application_date,
   reviewedBy: row.reviewed_by,
   reviewNotes: row.review_notes
+});
+
+const mapStandingFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  teamId: row.team_id,
+  matchesPlayed: row.matches_played,
+  won: row.won,
+  lost: row.lost,
+  tied: row.tied,
+  noResult: row.no_result,
+  points: row.points,
+  runsScored: row.runs_scored,
+  oversFaced: Number(row.overs_faced),
+  runsConceded: row.runs_conceded,
+  oversBowled: Number(row.overs_bowled),
+  netRunRate: Number(row.net_run_rate)
+});
+
+const mapExpenseFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  title: row.title,
+  category: row.category,
+  amount: Number(row.amount),
+  date: row.date,
+  vendorName: row.vendor_name,
+  receiptUrl: row.receipt_url,
+  paymentMode: row.payment_mode,
+  paymentStatus: row.payment_status,
+  notes: row.notes,
+  createdAt: row.created_at
+});
+
+const mapRuleFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  title: row.title,
+  category: row.category,
+  content: row.content,
+  videoUrl: row.video_url,
+  isPublished: Boolean(row.is_published),
+  updatedAt: row.updated_at
+});
+
+const mapMediaAssetFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  title: row.title,
+  category: row.category,
+  fileUrl: row.file_url,
+  fileType: row.file_type,
+  fileSizeKb: row.file_size_kb,
+  tags: row.tags || [],
+  uploadedAt: row.uploaded_at
+});
+
+const mapImportJobFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  jobType: row.job_type,
+  fileName: row.file_name,
+  totalRows: row.total_rows,
+  importedRows: row.imported_rows,
+  skippedRows: row.skipped_rows,
+  status: row.status,
+  importSummary: row.import_summary,
+  errors: row.errors || [],
+  importedBy: row.imported_by,
+  createdAt: row.created_at
+});
+
+const mapAuditLogFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  userName: row.user_name,
+  userRole: row.user_role,
+  action: row.action,
+  entityType: row.entity_type,
+  entityId: row.entity_id,
+  details: row.details,
+  timestamp: row.timestamp
+});
+
+const mapAuctionConfigFromDb = (row) => ({
+  tournamentId: row.tournament_id,
+  baseBudget: Number(row.base_budget),
+  bidIncrements: row.bid_increments || [
+    { upTo: 1000000, increment: 50000 },
+    { upTo: 5000000, increment: 100000 },
+    { upTo: 10000000, increment: 250000 }
+  ],
+  isAuctionLive: Boolean(row.is_auction_live),
+  activePlayerId: row.active_player_id || undefined,
+  currentHighestBid: Number(row.current_highest_bid || 0),
+  currentLeadingTeamId: row.current_leading_team_id || undefined,
+  auctionDemoVideoUrl: row.auction_demo_video_url || undefined,
+  updatedAt: row.updated_at
+});
+
+const mapAuctionBidFromDb = (row) => ({
+  id: row.id,
+  tournamentId: row.tournament_id,
+  playerId: row.player_id,
+  teamId: row.team_id,
+  amount: Number(row.amount),
+  timestamp: row.timestamp
 });
 
 export const supabaseDb = {
@@ -210,6 +332,9 @@ export const supabaseDb = {
       min_squad_size: t.minSquadSize || 14,
       max_overseas_players: t.maxOverseasPlayers || 4,
       description: t.description || '',
+      upi_qr_code_url: t.upiQrCodeUrl || '',
+      upi_id: t.upiId || 'warhawks.sports@icici',
+      registration_fee: Number(t.registrationFee) || 1500,
       is_archived: Boolean(t.isArchived)
     };
 
@@ -224,19 +349,274 @@ export const supabaseDb = {
 
     const row = {};
     if (updates.name !== undefined) row.name = updates.name;
+    if (updates.editionNumber !== undefined) row.edition_number = updates.editionNumber;
+    if (updates.year !== undefined) row.year = updates.year;
     if (updates.format !== undefined) row.format = updates.format;
     if (updates.status !== undefined) row.status = updates.status;
+    if (updates.startDate !== undefined) row.start_date = updates.startDate;
+    if (updates.endDate !== undefined) row.end_date = updates.endDate;
     if (updates.venue !== undefined) row.venue = updates.venue;
     if (updates.city !== undefined) row.city = updates.city;
     if (updates.registrationOpen !== undefined) row.registration_open = updates.registrationOpen;
     if (updates.registrationStartDate !== undefined) row.registration_start_date = updates.registrationStartDate;
     if (updates.registrationEndDate !== undefined) row.registration_end_date = updates.registrationEndDate;
     if (updates.totalBudgetPointsPerTeam !== undefined) row.total_budget_points_per_team = updates.totalBudgetPointsPerTeam;
+    if (updates.description !== undefined) row.description = updates.description;
+    if (updates.upiQrCodeUrl !== undefined) row.upi_qr_code_url = updates.upiQrCodeUrl;
+    if (updates.upiId !== undefined) row.upi_id = updates.upiId;
+    if (updates.registrationFee !== undefined) row.registration_fee = updates.registrationFee;
     if (updates.isArchived !== undefined) row.is_archived = updates.isArchived;
 
     const { data, error } = await client.from('tournaments').update(row).eq('id', id).select().single();
     if (error) throw error;
     return mapTournamentFromDb(data);
+  },
+
+  async deleteTournament(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('tournaments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Teams
+  async getTeams(tournamentId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { data, error } = await client
+      .from('teams')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('name');
+
+    if (error) throw error;
+    return (data || []).map(mapTeamFromDb);
+  },
+
+  async createTeam(tm) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {
+      id: tm.id,
+      tournament_id: tm.tournamentId,
+      name: tm.name,
+      short_code: tm.shortCode,
+      city: tm.city,
+      primary_color: tm.primaryColor || '#0284c7',
+      secondary_color: tm.secondaryColor || '#0f172a',
+      owner_name: tm.ownerName,
+      budget_total: tm.budgetTotal || 10000000,
+      budget_spent: tm.budgetSpent || 0,
+      budget_remaining: tm.budgetRemaining ?? tm.budgetTotal ?? 10000000,
+      total_players_assigned: tm.totalPlayersAssigned || 0
+    };
+
+    const { data, error } = await client.from('teams').insert([row]).select().single();
+    if (error) throw error;
+    return mapTeamFromDb(data);
+  },
+
+  async updateTeam(id, updates) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {};
+    if (updates.name !== undefined) row.name = updates.name;
+    if (updates.shortCode !== undefined) row.short_code = updates.shortCode;
+    if (updates.city !== undefined) row.city = updates.city;
+    if (updates.primaryColor !== undefined) row.primary_color = updates.primaryColor;
+    if (updates.secondaryColor !== undefined) row.secondary_color = updates.secondaryColor;
+    if (updates.ownerName !== undefined) row.owner_name = updates.ownerName;
+    if (updates.captainPlayerId !== undefined) row.captain_player_id = updates.captainPlayerId;
+    if (updates.budgetTotal !== undefined) row.budget_total = updates.budgetTotal;
+    if (updates.budgetSpent !== undefined) row.budget_spent = updates.budgetSpent;
+    if (updates.budgetRemaining !== undefined) row.budget_remaining = updates.budgetRemaining;
+    if (updates.totalPlayersAssigned !== undefined) row.total_players_assigned = updates.totalPlayersAssigned;
+
+    const { data, error } = await client.from('teams').update(row).eq('id', id).select().single();
+    if (error) throw error;
+    return mapTeamFromDb(data);
+  },
+
+  async deleteTeam(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('teams').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Players
+  async getPlayers(tournamentId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { data, error } = await client
+      .from('players')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('name');
+
+    if (error) throw error;
+    return (data || []).map(mapPlayerFromDb);
+  },
+
+  async createPlayer(p) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {
+      id: p.id,
+      tournament_id: p.tournamentId,
+      team_id: p.teamId || null,
+      name: p.name,
+      jersey_number: p.jerseyNumber,
+      role: p.role || 'All-Rounder',
+      batting_style: p.battingStyle || 'Right-hand bat',
+      bowling_style: p.bowlingStyle || 'Right-arm medium',
+      base_price: p.basePrice || 500000,
+      sold_price: p.soldPrice || null,
+      auction_status: p.auctionStatus || 'available',
+      is_captain: Boolean(p.isCaptain),
+      is_overseas: Boolean(p.isOverseas),
+      email: p.email,
+      phone: p.phone,
+      city: p.city,
+      shirt_size: p.shirtSize || 'L',
+      food_preference: p.foodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
+      registration_status: p.registrationStatus || 'approved',
+      payment_status: p.paymentStatus || 'paid',
+      matches_played: p.matchesPlayed || 0,
+      runs_scored: p.runsScored || 0,
+      highest_score: p.highestScore || 0,
+      wickets_taken: p.wicketsTaken || 0,
+      best_bowling: p.bestBowling || '-',
+      strike_rate: p.strikeRate || 0,
+      economy_rate: p.economyRate || 0
+    };
+
+    const { data, error } = await client.from('players').insert([row]).select().single();
+    if (error) throw error;
+    return mapPlayerFromDb(data);
+  },
+
+  async updatePlayer(id, updates) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {};
+    if (updates.teamId !== undefined) row.team_id = updates.teamId || null;
+    if (updates.name !== undefined) row.name = updates.name;
+    if (updates.jerseyNumber !== undefined) row.jersey_number = updates.jerseyNumber;
+    if (updates.role !== undefined) row.role = updates.role;
+    if (updates.battingStyle !== undefined) row.batting_style = updates.battingStyle;
+    if (updates.bowlingStyle !== undefined) row.bowling_style = updates.bowlingStyle;
+    if (updates.basePrice !== undefined) row.base_price = updates.basePrice;
+    if (updates.soldPrice !== undefined) row.sold_price = updates.soldPrice;
+    if (updates.auctionStatus !== undefined) row.auction_status = updates.auctionStatus;
+    if (updates.isCaptain !== undefined) row.is_captain = updates.isCaptain;
+    if (updates.isOverseas !== undefined) row.is_overseas = updates.isOverseas;
+    if (updates.city !== undefined) row.city = updates.city;
+    if (updates.foodPreference !== undefined) row.food_preference = updates.foodPreference;
+
+    const { data, error } = await client.from('players').update(row).eq('id', id).select().single();
+    if (error) throw error;
+    return mapPlayerFromDb(data);
+  },
+
+  async deletePlayer(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('players').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Matches
+  async getMatches(tournamentId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { data, error } = await client
+      .from('matches')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('match_number');
+
+    if (error) throw error;
+    return (data || []).map(mapMatchFromDb);
+  },
+
+  async createMatch(m) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {
+      id: m.id,
+      tournament_id: m.tournamentId,
+      match_number: m.matchNumber,
+      round: m.round || 'Group Stage',
+      team_a_id: m.teamAId,
+      team_b_id: m.teamBId,
+      date: m.date,
+      time: m.time,
+      venue: m.venue,
+      status: m.status || 'scheduled',
+      is_imported: Boolean(m.isImported),
+      import_source: m.importSource || 'manual'
+    };
+
+    const { data, error } = await client.from('matches').insert([row]).select().single();
+    if (error) throw error;
+    return mapMatchFromDb(data);
+  },
+
+  async updateMatch(id, updates) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {};
+    if (updates.status !== undefined) row.status = updates.status;
+    if (updates.tossWinnerId !== undefined) row.toss_winner_id = updates.tossWinnerId;
+    if (updates.tossDecision !== undefined) row.toss_decision = updates.tossDecision;
+    if (updates.teamAScore !== undefined) row.team_a_score = updates.teamAScore;
+    if (updates.teamAOvers !== undefined) row.team_a_overs = updates.teamAOvers;
+    if (updates.teamBScore !== undefined) row.team_b_score = updates.teamBScore;
+    if (updates.teamBOvers !== undefined) row.team_b_overs = updates.teamBOvers;
+    if (updates.winnerId !== undefined) row.winner_id = updates.winnerId;
+    if (updates.resultSummary !== undefined) row.result_summary = updates.resultSummary;
+    if (updates.manOfTheMatchPlayerId !== undefined) row.man_of_the_match_player_id = updates.manOfTheMatchPlayerId;
+
+    const { data, error } = await client.from('matches').update(row).eq('id', id).select().single();
+    if (error) throw error;
+    return mapMatchFromDb(data);
+  },
+
+  async deleteMatch(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('matches').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Standings
+  async getStandings(tournamentId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { data, error } = await client
+      .from('standings')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('points', { ascending: false })
+      .order('net_run_rate', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(mapStandingFromDb);
   },
 
   // Sponsors
@@ -263,7 +643,7 @@ export const supabaseDb = {
       tournament_id: s.tournamentId,
       name: s.name,
       contact_number: s.contactNumber,
-      contribution_amount: s.contributionAmount,
+      contribution_amount: s.contributionAmount || 0,
       contact_email: s.contactEmail || null,
       tier: s.tier || 'Official Partner',
       benefits_description: s.benefitsDescription || null,
@@ -337,9 +717,11 @@ export const supabaseDb = {
       has_breakfast: Boolean(reg.hasBreakfast),
       has_lunch: Boolean(reg.hasLunch),
       guest_count: Number(reg.guestCount) || 0,
+      guests: Array.isArray(reg.guests) ? reg.guests : [],
       guest_food_preference: reg.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
       has_guest_breakfast: Boolean(reg.hasGuestBreakfast),
-      has_guest_lunch: Boolean(reg.hasGuestLunch),
+      has_guest_lunch: Boolean(reg.has_guest_lunch),
+      payment_reference: reg.paymentReference || '',
       catering_status: reg.cateringStatus || 'requested',
       approval_status: reg.approvalStatus || 'pending',
       payment_status: reg.paymentStatus || 'pending'
@@ -362,9 +744,11 @@ export const supabaseDb = {
     if (updates.hasBreakfast !== undefined) row.has_breakfast = updates.hasBreakfast;
     if (updates.hasLunch !== undefined) row.has_lunch = updates.hasLunch;
     if (updates.guestCount !== undefined) row.guest_count = updates.guestCount;
+    if (updates.guests !== undefined) row.guests = updates.guests;
     if (updates.guestFoodPreference !== undefined) row.guest_food_preference = updates.guestFoodPreference;
     if (updates.hasGuestBreakfast !== undefined) row.has_guest_breakfast = updates.hasGuestBreakfast;
     if (updates.hasGuestLunch !== undefined) row.has_guest_lunch = updates.hasGuestLunch;
+    if (updates.paymentReference !== undefined) row.payment_reference = updates.paymentReference;
     if (updates.cateringStatus !== undefined) row.catering_status = updates.cateringStatus;
 
     const { data, error } = await client.from('registrations').update(row).eq('id', id).select().single();
@@ -380,163 +764,176 @@ export const supabaseDb = {
     if (error) throw error;
   },
 
-  // Teams
-  async getTeams(tournamentId) {
+  // Expenses
+  async getExpenses(tournamentId) {
     const client = getSupabaseClient();
     if (!client) return null;
 
     const { data, error } = await client
-      .from('teams')
+      .from('expenses')
       .select('*')
       .eq('tournament_id', tournamentId)
-      .order('name');
+      .order('date', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(mapTeamFromDb);
+    return (data || []).map(mapExpenseFromDb);
   },
 
-  // Players
-  async getPlayers(tournamentId) {
+  async createExpense(exp) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {
+      id: exp.id,
+      tournament_id: exp.tournamentId,
+      title: exp.title,
+      category: exp.category,
+      amount: exp.amount,
+      date: exp.date,
+      vendor_name: exp.vendorName,
+      receipt_url: exp.receiptUrl || null,
+      payment_mode: exp.paymentMode || 'Bank Transfer',
+      payment_status: exp.paymentStatus || 'paid',
+      notes: exp.notes || null
+    };
+
+    const { data, error } = await client.from('expenses').insert([row]).select().single();
+    if (error) throw error;
+    return mapExpenseFromDb(data);
+  },
+
+  async deleteExpense(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('expenses').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Rules
+  async getRules(tournamentId) {
     const client = getSupabaseClient();
     if (!client) return null;
 
     const { data, error } = await client
-      .from('players')
+      .from('rules')
       .select('*')
       .eq('tournament_id', tournamentId)
-      .order('name');
+      .order('category');
 
     if (error) throw error;
-    return (data || []).map(mapPlayerFromDb);
+    return (data || []).map(mapRuleFromDb);
   },
 
-  // Matches
-  async getMatches(tournamentId) {
+  async createRule(r) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {
+      id: r.id,
+      tournament_id: r.tournamentId,
+      title: r.title,
+      category: r.category,
+      content: r.content,
+      video_url: r.videoUrl || null,
+      is_published: r.isPublished ?? true
+    };
+
+    const { data, error } = await client.from('rules').insert([row]).select().single();
+    if (error) throw error;
+    return mapRuleFromDb(data);
+  },
+
+  async updateRule(id, updates) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const row = {};
+    if (updates.title !== undefined) row.title = updates.title;
+    if (updates.category !== undefined) row.category = updates.category;
+    if (updates.content !== undefined) row.content = updates.content;
+    if (updates.videoUrl !== undefined) row.video_url = updates.videoUrl;
+    if (updates.isPublished !== undefined) row.is_published = updates.isPublished;
+
+    const { data, error } = await client.from('rules').update(row).eq('id', id).select().single();
+    if (error) throw error;
+    return mapRuleFromDb(data);
+  },
+
+  async deleteRule(id) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    const { error } = await client.from('rules').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Auction Config & Bids
+  async getAuctionConfig(tournamentId) {
     const client = getSupabaseClient();
     if (!client) return null;
 
     const { data, error } = await client
-      .from('matches')
+      .from('auction_configs')
       .select('*')
       .eq('tournament_id', tournamentId)
-      .order('match_number');
+      .maybeSingle();
 
     if (error) throw error;
-    return (data || []).map(mapMatchFromDb);
+    if (!data) return null;
+    return mapAuctionConfigFromDb(data);
   },
 
-  /**
-   * One-click seed function: pushes all local sample records to Supabase tables
-   */
-  async seedSupabaseFromLocal(localSchema) {
+  async updateAuctionConfig(tournamentId, updates) {
     const client = getSupabaseClient();
-    if (!client) throw new Error('Supabase client is not connected.');
+    if (!client) return null;
 
-    const results = { tournaments: 0, teams: 0, players: 0, matches: 0, sponsors: 0, registrations: 0 };
+    const row = {
+      tournament_id: tournamentId,
+      updated_at: new Date().toISOString()
+    };
+    if (updates.baseBudget !== undefined) row.base_budget = updates.baseBudget;
+    if (updates.bidIncrements !== undefined) row.bid_increments = updates.bidIncrements;
+    if (updates.isAuctionLive !== undefined) row.is_auction_live = updates.isAuctionLive;
+    if (updates.activePlayerId !== undefined) row.active_player_id = updates.activePlayerId;
+    if (updates.currentHighestBid !== undefined) row.current_highest_bid = updates.currentHighestBid;
+    if (updates.currentLeadingTeamId !== undefined) row.current_leading_team_id = updates.currentLeadingTeamId;
+    if (updates.auctionDemoVideoUrl !== undefined) row.auction_demo_video_url = updates.auctionDemoVideoUrl;
 
-    // 1. Tournaments
-    for (const t of localSchema.tournaments || []) {
-      const row = {
-        id: t.id,
-        name: t.name,
-        edition_number: t.editionNumber,
-        year: t.year,
-        format: t.format,
-        status: t.status,
-        organizer: t.organizer || 'Warhawks',
-        organizer_role: t.organizerRole,
-        organizer_branch: t.organizerBranch,
-        start_date: t.startDate,
-        end_date: t.endDate,
-        venue: t.venue,
-        city: t.city,
-        registration_open: t.registrationOpen,
-        total_budget_points_per_team: t.totalBudgetPointsPerTeam,
-        description: t.description,
-        is_archived: t.isArchived
-      };
-      const { error } = await client.from('tournaments').upsert(row, { onConflict: 'id' });
-      if (!error) results.tournaments++;
-    }
+    const { data, error } = await client.from('auction_configs').upsert(row, { onConflict: 'tournament_id' }).select().single();
+    if (error) throw error;
+    return mapAuctionConfigFromDb(data);
+  },
 
-    // 2. Teams
-    for (const tm of localSchema.teams || []) {
-      const row = {
-        id: tm.id,
-        tournament_id: tm.tournamentId,
-        name: tm.name,
-        short_code: tm.shortCode,
-        city: tm.city,
-        owner_name: tm.ownerName,
-        budget_total: tm.budgetTotal
-      };
-      const { error } = await client.from('teams').upsert(row, { onConflict: 'id' });
-      if (!error) results.teams++;
-    }
+  async getAuctionBids(tournamentId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
 
-    // 3. Players
-    for (const p of localSchema.players || []) {
-      const row = {
-        id: p.id,
-        tournament_id: p.tournamentId,
-        team_id: p.teamId,
-        name: p.name,
-        jersey_number: p.jerseyNumber,
-        role: p.role,
-        batting_style: p.battingStyle,
-        bowling_style: p.bowlingStyle,
-        email: p.email,
-        phone: p.phone,
-        city: p.city,
-        food_preference: p.foodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg'
-      };
-      const { error } = await client.from('players').upsert(row, { onConflict: 'id' });
-      if (!error) results.players++;
-    }
+    const { data, error } = await client
+      .from('auction_bids')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('timestamp', { ascending: false });
 
-    // 4. Sponsors
-    for (const s of localSchema.sponsors || []) {
-      const row = {
-        id: s.id,
-        tournament_id: s.tournamentId,
-        name: s.name,
-        contact_number: s.contactNumber || '+91 98200 12345',
-        contribution_amount: s.contributionAmount || 0,
-        contact_email: s.contactEmail,
-        is_active: s.isActive ?? true,
-        display_on_public_web: s.displayOnPublicWeb ?? true
-      };
-      const { error } = await client.from('sponsors').upsert(row, { onConflict: 'id' });
-      if (!error) results.sponsors++;
-    }
+    if (error) throw error;
+    return (data || []).map(mapAuctionBidFromDb);
+  },
 
-    // 5. Registrations
-    for (const r of localSchema.registrations || []) {
-      const row = {
-        id: r.id,
-        tournament_id: r.tournamentId,
-        full_name: r.fullName,
-        email: r.email,
-        phone: r.phone,
-        age: r.age,
-        city: r.city,
-        primary_role: r.primaryRole,
-        batting_style: r.battingStyle,
-        bowling_style: r.bowlingStyle,
-        food_preference: r.foodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
-        has_breakfast: Boolean(r.hasBreakfast),
-        has_lunch: Boolean(r.hasLunch),
-        guest_count: Number(r.guestCount) || 0,
-        guest_food_preference: r.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
-        has_guest_breakfast: Boolean(r.hasGuestBreakfast),
-        has_guest_lunch: Boolean(r.hasGuestLunch),
-        catering_status: r.cateringStatus || 'confirmed',
-        approval_status: r.approvalStatus || 'approved'
-      };
-      const { error } = await client.from('registrations').upsert(row, { onConflict: 'id' });
-      if (!error) results.registrations++;
-    }
+  async createAuctionBid(b) {
+    const client = getSupabaseClient();
+    if (!client) return null;
 
-    return results;
+    const row = {
+      id: b.id,
+      tournament_id: b.tournamentId,
+      player_id: b.playerId,
+      team_id: b.teamId,
+      amount: b.amount,
+      timestamp: b.timestamp || new Date().toISOString()
+    };
+
+    const { data, error } = await client.from('auction_bids').insert([row]).select().single();
+    if (error) throw error;
+    return mapAuctionBidFromDb(data);
   }
 };

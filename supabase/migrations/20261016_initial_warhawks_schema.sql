@@ -341,83 +341,101 @@ ALTER TABLE public.import_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- USER PROFILES POLICIES
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.user_profiles;
 CREATE POLICY "Users can view their own profile"
   ON public.user_profiles FOR SELECT
   USING (auth.uid() = id OR public.is_organizer());
 
+DROP POLICY IF EXISTS "Users can update their personal profile info (except role)" ON public.user_profiles;
 CREATE POLICY "Users can update their personal profile info (except role)"
   ON public.user_profiles FOR UPDATE
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id AND role = (SELECT role FROM public.user_profiles WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Organizers can view and manage all user profiles" ON public.user_profiles;
 CREATE POLICY "Organizers can view and manage all user profiles"
   ON public.user_profiles FOR ALL
   USING (public.is_organizer());
 
 -- TOURNAMENTS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view published non-archived tournaments" ON public.tournaments;
 CREATE POLICY "Public & Players can view published non-archived tournaments"
   ON public.tournaments FOR SELECT
   USING (is_archived = false OR public.is_organizer());
 
+DROP POLICY IF EXISTS "Organizers have full control over tournaments" ON public.tournaments;
 CREATE POLICY "Organizers have full control over tournaments"
   ON public.tournaments FOR ALL
   USING (public.is_organizer());
 
 -- TEAMS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view teams" ON public.teams;
 CREATE POLICY "Public & Players can view teams"
   ON public.teams FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can manage teams" ON public.teams;
 CREATE POLICY "Organizers can manage teams"
   ON public.teams FOR ALL
   USING (public.is_organizer());
 
 -- PLAYERS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view players" ON public.players;
 CREATE POLICY "Public & Players can view players"
   ON public.players FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can manage players" ON public.players;
 CREATE POLICY "Organizers can manage players"
   ON public.players FOR ALL
   USING (public.is_organizer());
 
 -- MATCHES POLICIES
+DROP POLICY IF EXISTS "Public & Players can view matches" ON public.matches;
 CREATE POLICY "Public & Players can view matches"
   ON public.matches FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can manage fixtures, scores, and results" ON public.matches;
 CREATE POLICY "Organizers can manage fixtures, scores, and results"
   ON public.matches FOR ALL
   USING (public.is_organizer());
 
 -- STANDINGS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view standings" ON public.standings;
 CREATE POLICY "Public & Players can view standings"
   ON public.standings FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can manage standings" ON public.standings;
 CREATE POLICY "Organizers can manage standings"
   ON public.standings FOR ALL
   USING (public.is_organizer());
 
 -- SPONSORS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view active public sponsors" ON public.sponsors;
 CREATE POLICY "Public & Players can view active public sponsors"
   ON public.sponsors FOR SELECT
   USING (display_on_public_web = true OR public.is_organizer());
 
+DROP POLICY IF EXISTS "Organizers can manage sponsors" ON public.sponsors;
 CREATE POLICY "Organizers can manage sponsors"
   ON public.sponsors FOR ALL
   USING (public.is_organizer());
 
 -- EXPENSES POLICIES (ORGANIZER ONLY)
+DROP POLICY IF EXISTS "Only organizers can view expenses" ON public.expenses;
 CREATE POLICY "Only organizers can view expenses"
   ON public.expenses FOR SELECT
   USING (public.is_organizer());
 
+DROP POLICY IF EXISTS "Only organizers can manage expenses" ON public.expenses;
 CREATE POLICY "Only organizers can manage expenses"
   ON public.expenses FOR ALL
   USING (public.is_organizer());
 
 -- REGISTRATIONS POLICIES (PLAYERS SELF-REGISTER & CAN VIEW OWN; ORGANIZERS FULL ACCESS)
+DROP POLICY IF EXISTS "Players can view their own registration" ON public.registrations;
 CREATE POLICY "Players can view their own registration"
   ON public.registrations FOR SELECT
   USING (
@@ -425,6 +443,7 @@ CREATE POLICY "Players can view their own registration"
     OR public.is_organizer()
   );
 
+DROP POLICY IF EXISTS "Players can submit their tournament application" ON public.registrations;
 CREATE POLICY "Players can submit their tournament application"
   ON public.registrations FOR INSERT
   WITH CHECK (
@@ -435,6 +454,7 @@ CREATE POLICY "Players can submit their tournament application"
     )
   );
 
+DROP POLICY IF EXISTS "Players can cancel their own pending registration" ON public.registrations;
 CREATE POLICY "Players can cancel their own pending registration"
   ON public.registrations FOR DELETE
   USING (
@@ -444,37 +464,45 @@ CREATE POLICY "Players can cancel their own pending registration"
     )
   );
 
+DROP POLICY IF EXISTS "Organizers have full control over registrations" ON public.registrations;
 CREATE POLICY "Organizers have full control over registrations"
   ON public.registrations FOR ALL
   USING (public.is_organizer());
 
 -- RULES POLICIES
+DROP POLICY IF EXISTS "Public & Players can view published rules" ON public.rules;
 CREATE POLICY "Public & Players can view published rules"
   ON public.rules FOR SELECT
   USING (is_published = true OR public.is_organizer());
 
+DROP POLICY IF EXISTS "Organizers can manage tournament rules" ON public.rules;
 CREATE POLICY "Organizers can manage tournament rules"
   ON public.rules FOR ALL
   USING (public.is_organizer());
 
 -- MEDIA ASSETS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view media assets" ON public.media_assets;
 CREATE POLICY "Public & Players can view media assets"
   ON public.media_assets FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Organizers can upload and manage media" ON public.media_assets;
 CREATE POLICY "Organizers can upload and manage media"
   ON public.media_assets FOR ALL
   USING (public.is_organizer());
 
 -- IMPORT JOBS & AUDIT LOGS (ORGANIZERS ONLY)
+DROP POLICY IF EXISTS "Organizers can view and record import jobs" ON public.import_jobs;
 CREATE POLICY "Organizers can view and record import jobs"
   ON public.import_jobs FOR ALL
   USING (public.is_organizer());
 
+DROP POLICY IF EXISTS "Organizers can view audit logs" ON public.audit_logs;
 CREATE POLICY "Organizers can view audit logs"
   ON public.audit_logs FOR SELECT
   USING (public.is_organizer());
 
+DROP POLICY IF EXISTS "Audit logs insertion allowed" ON public.audit_logs;
 CREATE POLICY "Audit logs insertion allowed"
   ON public.audit_logs FOR INSERT
   WITH CHECK (true);

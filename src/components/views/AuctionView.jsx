@@ -252,7 +252,11 @@ export const AuctionView = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {teams.map(team => {
+                {teams.length === 0 ? (
+                  <div className="col-span-full py-6 text-center text-xs text-slate-400 border border-dashed border-slate-700 rounded-lg">
+                    No franchise teams registered for auction bidding yet. Add teams to begin bidding.
+                  </div>
+                ) : teams.map(team => {
                   const cannotAfford = currentBid + 50000 > team.budgetRemaining;
 
                   return (

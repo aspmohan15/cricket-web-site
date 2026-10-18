@@ -154,8 +154,14 @@ export const FixturesResultsView = ({
       {/* Matches Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredMatches.length === 0 ? (
-          <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center text-xs text-slate-400">
-            No matches found for the selected filter.
+          <div className="col-span-full bg-white rounded-xl border border-dashed border-slate-200 p-8 sm:p-12 text-center text-xs text-slate-500">
+            <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="font-semibold text-slate-800">
+              {matches.length === 0 ? 'Fixtures have not been created yet.' : 'No matches found for the selected filter.'}
+            </p>
+            {matches.length === 0 && (
+              <p className="text-slate-400 mt-1">Schedule group stage matches or import verified fixtures from CricHeroes.</p>
+            )}
           </div>
         ) : (
           filteredMatches.map(match => {

@@ -234,7 +234,7 @@ export const ExpensesView = ({
       <div className="md:hidden space-y-3">
         {filteredExpenses.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            No expenses found matching filter.
+            {expenses.length === 0 ? 'No expense vouchers recorded yet.' : 'No expenses found matching filter.'}
           </div>
         ) : (
           filteredExpenses.map(expense => (
@@ -303,7 +303,13 @@ export const ExpensesView = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredExpenses.map(expense => (
+              {filteredExpenses.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400">
+                    {expenses.length === 0 ? 'No expense vouchers recorded yet.' : 'No expenses found matching filter.'}
+                  </td>
+                </tr>
+              ) : filteredExpenses.map(expense => (
                 <tr key={expense.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="font-bold text-slate-900">{expense.title}</div>

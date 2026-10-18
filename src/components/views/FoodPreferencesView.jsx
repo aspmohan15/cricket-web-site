@@ -38,26 +38,53 @@ export const FoodPreferencesView = ({
     const playerHasBreakfast = Boolean(r.hasBreakfast);
     const playerHasLunch = Boolean(r.hasLunch);
     const guestCount = Math.max(0, parseInt(r.guestCount, 10) || 0);
-    const guestDiet = r.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg';
     const guestHasBreakfast = guestCount > 0 ? Boolean(r.hasGuestBreakfast) : false;
     const guestHasLunch = guestCount > 0 ? Boolean(r.hasGuestLunch) : false;
+
+    // Count independent guest diets
+    let guestVegCount = 0;
+    let guestNonVegCount = 0;
+    let normalizedGuests = [];
+
+    if (guestCount > 0) {
+      if (Array.isArray(r.guests) && r.guests.length > 0) {
+        normalizedGuests = r.guests.slice(0, guestCount).map((g, idx) => ({
+          guestNumber: idx + 1,
+          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg'
+        }));
+        while (normalizedGuests.length < guestCount) {
+          normalizedGuests.push({ guestNumber: normalizedGuests.length + 1, dietaryPreference: 'Veg' });
+        }
+      } else {
+        const defaultDiet = (r.guestFoodPreference === 'Non-Veg' || r.guestFoodPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg';
+        normalizedGuests = Array.from({ length: guestCount }, (_, i) => ({
+          guestNumber: i + 1,
+          dietaryPreference: defaultDiet
+        }));
+      }
+
+      normalizedGuests.forEach(g => {
+        if (g.dietaryPreference === 'Non-Veg') guestNonVegCount += 1;
+        else guestVegCount += 1;
+      });
+    }
 
     const totalBreakfasts = (playerHasBreakfast ? 1 : 0) + (guestHasBreakfast ? guestCount : 0);
     const totalLunches = (playerHasLunch ? 1 : 0) + (guestHasLunch ? guestCount : 0);
 
     const vegBreakfasts =
       (playerHasBreakfast && playerDiet === 'Veg' ? 1 : 0) +
-      (guestHasBreakfast && guestDiet === 'Veg' ? guestCount : 0);
+      (guestHasBreakfast ? guestVegCount : 0);
     const nonVegBreakfasts =
       (playerHasBreakfast && playerDiet === 'Non-Veg' ? 1 : 0) +
-      (guestHasBreakfast && guestDiet === 'Non-Veg' ? guestCount : 0);
+      (guestHasBreakfast ? guestNonVegCount : 0);
 
     const vegLunches =
       (playerHasLunch && playerDiet === 'Veg' ? 1 : 0) +
-      (guestHasLunch && guestDiet === 'Veg' ? guestCount : 0);
+      (guestHasLunch ? guestVegCount : 0);
     const nonVegLunches =
       (playerHasLunch && playerDiet === 'Non-Veg' ? 1 : 0) +
-      (guestHasLunch && guestDiet === 'Non-Veg' ? guestCount : 0);
+      (guestHasLunch ? guestNonVegCount : 0);
 
     const totalHeadcount = 1 + guestCount;
     const cateringStatus = r.cateringStatus || 'confirmed';
@@ -75,7 +102,10 @@ export const FoodPreferencesView = ({
       playerHasBreakfast,
       playerHasLunch,
       guestCount,
-      guestDiet,
+      guests: normalizedGuests,
+      guestVegCount,
+      guestNonVegCount,
+      guestDiet: guestNonVegCount > 0 ? (guestVegCount > 0 ? 'Mixed' : 'Non-Veg') : 'Veg',
       guestHasBreakfast,
       guestHasLunch,
       totalBreakfasts,
@@ -109,10 +139,8 @@ export const FoodPreferencesView = ({
       if (item.playerDiet === 'Veg') acc.vegAttendees += 1;
       else acc.nonVegAttendees += 1;
 
-      if (item.guestCount > 0) {
-        if (item.guestDiet === 'Veg') acc.vegAttendees += item.guestCount;
-        else acc.nonVegAttendees += item.guestCount;
-      }
+      acc.vegAttendees += item.guestVegCount;
+      acc.nonVegAttendees += item.guestNonVegCount;
 
       return acc;
     },
@@ -193,7 +221,8 @@ export const FoodPreferencesView = ({
       hasBreakfast: editingRegistration.playerHasBreakfast,
       hasLunch: editingRegistration.playerHasLunch,
       guestCount: editingRegistration.guestCount,
-      guestFoodPreference: editingRegistration.guestDiet,
+      guests: editingRegistration.guests || [],
+      guestFoodPreference: editingRegistration.guestDiet === 'Non-Veg' ? 'Non-Veg' : 'Veg',
       hasGuestBreakfast: editingRegistration.hasGuestBreakfast,
       hasGuestLunch: editingRegistration.hasGuestLunch,
       cateringStatus: editingRegistration.cateringStatus
@@ -391,7 +420,7 @@ export const FoodPreferencesView = ({
       <div className="md:hidden space-y-3">
         {filteredList.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            No player registration records match the current filter criteria.
+            {registrations.length === 0 ? 'No player meal requisitions or registrations yet.' : 'No player registration records match the current filter criteria.'}
           </div>
         ) : (
           filteredList.map(item => (
@@ -519,7 +548,7 @@ export const FoodPreferencesView = ({
               {filteredList.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-400">
-                    No player registration records match the current filter criteria.
+                    {registrations.length === 0 ? 'No player meal requisitions or registrations yet.' : 'No player registration records match the current filter criteria.'}
                   </td>
                 </tr>
               ) : (
@@ -696,7 +725,7 @@ export const FoodPreferencesView = ({
                 <span>Accompanying Guests & Dietary Options</span>
               </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Guest Number</label>
                   <input
@@ -706,9 +735,18 @@ export const FoodPreferencesView = ({
                     value={editingRegistration.guestCount}
                     onChange={e => {
                       const count = Math.max(0, parseInt(e.target.value, 10) || 0);
+                      let updatedGuests = [...(editingRegistration.guests || [])];
+                      if (count > updatedGuests.length) {
+                        for (let i = updatedGuests.length; i < count; i++) {
+                          updatedGuests.push({ guestNumber: i + 1, dietaryPreference: 'Veg' });
+                        }
+                      } else if (count < updatedGuests.length) {
+                        updatedGuests = updatedGuests.slice(0, count);
+                      }
                       setEditingRegistration({
                         ...editingRegistration,
                         guestCount: count,
+                        guests: updatedGuests,
                         hasGuestBreakfast: count > 0 ? editingRegistration.hasGuestBreakfast : false,
                         hasGuestLunch: count > 0 ? editingRegistration.hasGuestLunch : false
                       });
@@ -718,20 +756,7 @@ export const FoodPreferencesView = ({
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Guest Diet</label>
-                  <select
-                    disabled={editingRegistration.guestCount === 0}
-                    value={editingRegistration.guestDiet}
-                    onChange={e => setEditingRegistration({ ...editingRegistration, guestDiet: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium bg-white disabled:opacity-50"
-                  >
-                    <option value="Veg">Veg (Vegetarian)</option>
-                    <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Guest Meals</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Guest Match Meals</label>
                   <div className="flex items-center gap-3 pt-2">
                     <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
                       <input
@@ -756,6 +781,36 @@ export const FoodPreferencesView = ({
                   </div>
                 </div>
               </div>
+
+              {/* Independent Dietary Selection for Each Guest */}
+              {editingRegistration.guestCount > 0 && Array.isArray(editingRegistration.guests) && editingRegistration.guests.length > 0 && (
+                <div className="pt-2 border-t border-slate-200/70 space-y-2">
+                  <span className="text-[11px] font-bold text-slate-800 block">
+                    Independent Guest Dietary Preferences ({editingRegistration.guestCount} Guests):
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto p-1">
+                    {editingRegistration.guests.map((g, idx) => (
+                      <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                          Guest {idx + 1} — Dietary preference
+                        </label>
+                        <select
+                          value={g.dietaryPreference}
+                          onChange={e => {
+                            const newGuests = [...editingRegistration.guests];
+                            newGuests[idx] = { ...newGuests[idx], dietaryPreference: e.target.value };
+                            setEditingRegistration({ ...editingRegistration, guests: newGuests });
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs bg-white"
+                        >
+                          <option value="Veg">Veg (Vegetarian)</option>
+                          <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Catering Status Option */}

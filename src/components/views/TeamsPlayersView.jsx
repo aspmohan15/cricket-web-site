@@ -278,8 +278,39 @@ export const TeamsPlayersView = ({
 
       {/* SQUADS TAB */}
       {activeTab === 'squads' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.map(team => {
+        teams.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-slate-200 p-8 sm:p-12 text-center text-xs text-slate-500">
+            <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <h3 className="font-bold text-slate-800 text-sm">No franchise teams added yet.</h3>
+            <p className="text-slate-400 mt-1 max-w-sm mx-auto">
+              Create franchise squads or import team rosters from CSV to allocate player budgets and schedule fixtures.
+            </p>
+            {isOrganizer && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => {
+                    setTeamForm({
+                      name: '',
+                      shortCode: '',
+                      city: tournament?.city || 'Mumbai',
+                      primaryColor: '#0284c7',
+                      secondaryColor: '#0f172a',
+                      ownerName: '',
+                      budgetTotal: tournament?.totalBudgetPointsPerTeam || 10000000
+                    });
+                    setCreateTeamModalOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add First Team
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teams.map(team => {
             const teamSquad = players.filter(p => p.teamId === team.id);
             const captain = teamSquad.find(p => p.isCaptain);
             const overseasCount = teamSquad.filter(p => p.isOverseas).length;
@@ -411,6 +442,7 @@ export const TeamsPlayersView = ({
             );
           })}
         </div>
+        )
       )}
 
       {/* PLAYERS DIRECTORY TAB */}
@@ -464,7 +496,7 @@ export const TeamsPlayersView = ({
           <div className="md:hidden space-y-3">
             {filteredPlayers.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-                No players found matching current search/filter.
+                {players.length === 0 ? 'No players registered or added yet.' : 'No players found matching current search/filter.'}
               </div>
             ) : (
               filteredPlayers.map(player => {
@@ -586,7 +618,7 @@ export const TeamsPlayersView = ({
                   {filteredPlayers.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-8 text-slate-400">
-                        No players found matching current search/filter.
+                        {players.length === 0 ? 'No players registered or added yet.' : 'No players found matching current search/filter.'}
                       </td>
                     </tr>
                   ) : (

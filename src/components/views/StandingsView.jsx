@@ -59,7 +59,13 @@ export const StandingsView = ({
 
       {/* Mobile Standings Cards (Mobile < 768px) */}
       <div className="md:hidden space-y-3">
-        {standings.map((row, idx) => {
+        {standings.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-slate-200 p-8 text-center text-xs text-slate-500">
+            <ListOrdered className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="font-semibold text-slate-800">No standings available yet.</p>
+            <p className="text-slate-400 mt-1">Standings and Net Run Rate (NRR) calculate automatically as match results are recorded.</p>
+          </div>
+        ) : standings.map((row, idx) => {
           const team = teams.find(t => t.id === row.teamId);
           const isTop4 = idx < 4;
 
@@ -164,7 +170,15 @@ export const StandingsView = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono">
-              {standings.map((row, idx) => {
+              {standings.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-500 font-sans">
+                    <ListOrdered className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="font-semibold text-slate-800">No standings available yet.</p>
+                    <p className="text-xs text-slate-400 mt-1">Standings and Net Run Rate (NRR) calculate automatically as match results are recorded.</p>
+                  </td>
+                </tr>
+              ) : standings.map((row, idx) => {
                 const team = teams.find(t => t.id === row.teamId);
                 const isTop4 = idx < 4;
 

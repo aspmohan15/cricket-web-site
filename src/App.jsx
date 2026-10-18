@@ -20,19 +20,42 @@ import { MediaLibraryView } from './components/views/MediaLibraryView';
 import { ImportHistoryView } from './components/views/ImportHistoryView';
 import { UserAccessView } from './components/views/UserAccessView';
 import { SettingsView } from './components/views/SettingsView';
+import { OrganizerLoginModal } from './components/common/OrganizerLoginModal';
+import { getOrganizerSession, logoutOrganizer } from './services/auth';
 
 export default function App() {
-  const [currentSection, setCurrentSection] = useState('dashboard');
+  const organizerSession = getOrganizerSession();
+
+  // If organizer session exists, default to dashboard; otherwise open public player portal (registrations)
+  const [currentSection, setCurrentSection] = useState(
+    organizerSession ? 'dashboard' : 'registrations'
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [organizerLoginModalOpen, setOrganizerLoginModalOpen] = useState(false);
 
   // Database snapshot states
   const [tournaments, setTournaments] = useState(() => db.getTournaments());
-  const [activeTournamentId, setActiveTournamentId] = useState('tour-ed5-2026');
-  const [currentUser, setCurrentUser] = useState(() => db.getUsers()[0]);
+  const [activeTournamentId, setActiveTournamentId] = useState(() => {
+    const list = db.getTournaments();
+    return list.length > 0 ? list[0].id : null;
+  });
+
+  // Current user: authenticated organizer if session exists; otherwise public player without an account
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (organizerSession && organizerSession.user) {
+      return organizerSession.user;
+    }
+    return {
+      id: 'public-visitor',
+      name: 'Public Player',
+      role: 'player',
+      email: ''
+    };
+  });
 
   // Derived active tournament
-  const activeTournament = tournaments.find(t => t.id === activeTournamentId) || tournaments[0];
+  const activeTournament = tournaments.find(t => t.id === activeTournamentId) || tournaments[0] || null;
 
   // Reload data for the active tournament
   const [teams, setTeams] = useState([]);
@@ -51,7 +74,27 @@ export default function App() {
   const [settings, setSettings] = useState(() => db.getSettings());
 
   const refreshTournamentData = (tId) => {
-    setTournaments(db.getTournaments());
+    const currentTournaments = db.getTournaments();
+    setTournaments(currentTournaments);
+
+    if (!tId) {
+      setTeams([]);
+      setPlayers([]);
+      setMatches([]);
+      setStandings([]);
+      setAuctionConfig({ baseBudget: 10000000, currentHighestBid: 0, isAuctionLive: false });
+      setSponsors([]);
+      setExpenses([]);
+      setFoodOrders([]);
+      setRules([]);
+      setRegistrations([]);
+      setMediaAssets([]);
+      setImportJobs([]);
+      setAuditLogs([]);
+      setSettings(db.getSettings());
+      return;
+    }
+
     setTeams(db.getTeams(tId));
     setPlayers(db.getPlayers(tId));
     setMatches(db.getMatches(tId));
@@ -69,9 +112,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (activeTournament) {
-      refreshTournamentData(activeTournament.id);
-    }
+    refreshTournamentData(activeTournamentId);
   }, [activeTournamentId]);
 
   const showToast = (message, type = 'success') => {
@@ -113,6 +154,26 @@ export default function App() {
       setCurrentSection('fixtures_results');
     }
     showToast(`Session authority updated: ${role.toUpperCase()}`, 'info');
+  };
+
+  // Organizer Authentication Handlers
+  const handleOrganizerLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setOrganizerLoginModalOpen(false);
+    setCurrentSection('dashboard');
+    showToast(`Welcome back, ${user.name}! Organizer session active.`, 'success');
+  };
+
+  const handleOrganizerLogout = () => {
+    logoutOrganizer();
+    setCurrentUser({
+      id: 'public-visitor',
+      name: 'Public Player',
+      role: 'player',
+      email: ''
+    });
+    setCurrentSection('registrations');
+    showToast('Logged out of organizer session. Public player portal active.', 'info');
   };
 
   // Quick Action Handler from Topbar
@@ -395,11 +456,14 @@ export default function App() {
     showToast(`Bulk imported ${importedPlayers.length} athletes!`, 'success');
   };
 
-  // Reset Sample
+  // Reset to clean empty database state (zero records)
   const handleResetDatabase = () => {
-    db.resetToDefault();
-    setActiveTournamentId('tour-ed5-2026');
-    refreshTournamentData('tour-ed5-2026');
+    db.resetToCleanEmptyState();
+    const cleanList = db.getTournaments();
+    setTournaments(cleanList);
+    setActiveTournamentId(null);
+    refreshTournamentData(null);
+    showToast('Database reset to clean empty state (zero records).', 'info');
   };
 
   return (
@@ -415,6 +479,8 @@ export default function App() {
         currentUser={currentUser}
         isOpenMobile={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        onOpenOrganizerLogin={() => setOrganizerLoginModalOpen(true)}
+        onLogout={handleOrganizerLogout}
       />
 
       {/* Main Content Area */}
@@ -429,6 +495,8 @@ export default function App() {
           onSwitchRole={handleSwitchRole}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onQuickAction={handleQuickAction}
+          onOpenOrganizerLogin={() => setOrganizerLoginModalOpen(true)}
+          onLogout={handleOrganizerLogout}
         />
 
         {/* Viewport Content Canvas */}
@@ -658,6 +726,14 @@ export default function App() {
           </div>
         </footer>
       </div>
+
+      {/* Organizer Authentication Modal (Strictly Mobile + Password) */}
+      <OrganizerLoginModal
+        isOpen={organizerLoginModalOpen}
+        onClose={() => setOrganizerLoginModalOpen(false)}
+        onSuccess={handleOrganizerLoginSuccess}
+        onShowToast={showToast}
+      />
     </div>
   );
 }
