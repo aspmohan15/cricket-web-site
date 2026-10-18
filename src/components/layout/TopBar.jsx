@@ -12,7 +12,8 @@ import {
   FileSpreadsheet,
   LogIn,
   LogOut,
-  Lock
+  Lock,
+  Database
 } from 'lucide-react';
 
 export const TopBar = ({
@@ -25,7 +26,9 @@ export const TopBar = ({
   onOpenMobileSidebar,
   onQuickAction,
   onOpenOrganizerLogin,
-  onLogout
+  onLogout,
+  onOpenDatabaseModal,
+  isDbConnected
 }) => {
   const [editionDropdownOpen, setEditionDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -200,8 +203,33 @@ export const TopBar = ({
         )}
       </div>
 
-      {/* Right Zone: Quick Actions & Profile */}
+      {/* Right Zone: Database Status, Quick Actions & Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Live Database Connection Status Trigger (Restricted Exclusively to Admin / Organizer) */}
+        {currentUser?.role === 'organizer' && (
+          <button
+            type="button"
+            onClick={onOpenDatabaseModal}
+            className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 min-h-[38px] rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+              isDbConnected
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 shadow-2xs'
+                : 'bg-amber-50/90 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-2xs'
+            }`}
+            title="Admin Console: Inspect Supabase PostgreSQL connection & diagnostic status"
+          >
+            <span className={`w-2 h-2 rounded-full shrink-0 ${
+              isDbConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+            }`} />
+            <Database className={`w-3.5 h-3.5 shrink-0 ${isDbConnected ? 'text-emerald-700' : 'text-amber-700'}`} />
+            <span className="hidden md:inline font-mono text-[11px]">
+              {isDbConnected ? 'Supabase: Live' : 'DB: Local Mode'}
+            </span>
+            <span className="md:hidden font-mono text-[11px]">
+              {isDbConnected ? 'Live' : 'Local'}
+            </span>
+          </button>
+        )}
+
         {/* Quick Actions Dropdown */}
         <div className="relative">
           <button

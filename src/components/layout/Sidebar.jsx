@@ -20,7 +20,8 @@ import {
   X,
   LogIn,
   LogOut,
-  Lock
+  Lock,
+  Database
 } from 'lucide-react';
 
 export const Sidebar = ({
@@ -31,7 +32,9 @@ export const Sidebar = ({
   isOpenMobile,
   onCloseMobile,
   onOpenOrganizerLogin,
-  onLogout
+  onLogout,
+  onOpenDatabaseModal,
+  isDbConnected
 }) => {
   const isOrganizer = currentUser?.role === 'organizer';
 
@@ -201,6 +204,32 @@ export const Sidebar = ({
                 <span>Organizer Sign In</span>
               </span>
               <span className="text-[10px] text-emerald-400 font-mono">Host</span>
+            </button>
+          )}
+
+          {/* Database Connection Status Trigger (Restricted Exclusively to Admin / Organizer) */}
+          {isOrganizer && (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenDatabaseModal?.();
+                onCloseMobile();
+              }}
+              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer border ${
+                isDbConnected
+                  ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-300 hover:bg-emerald-900/60'
+                  : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+              }`}
+              title="Admin Console: Inspect Supabase PostgreSQL connection & diagnostic status"
+            >
+              <span className="flex items-center gap-2">
+                <Database className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] font-sans font-medium">Database Config</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px]">
+                <span className={`w-1.5 h-1.5 rounded-full ${isDbConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span>{isDbConnected ? 'Supabase' : 'Local Store'}</span>
+              </span>
             </button>
           )}
 

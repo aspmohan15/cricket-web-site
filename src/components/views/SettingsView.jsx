@@ -25,11 +25,13 @@ import { getStoredOrganizerCredentials, updateOrganizerCredentials } from '../..
 export const SettingsView = ({
   settings,
   tournament,
+  currentUser,
   onUpdateSettings,
   onResetDatabase,
   onShowToast
 }) => {
-  const currentSupabase = getSupabaseConfig();
+  const isAdmin = currentUser?.role === 'organizer';
+  const currentSupabase = getSupabaseConfig(true);
   const [form, setForm] = useState({
     ...settings,
     supabaseUrl: settings.supabaseUrl || settings.supabaseProjectUrl || currentSupabase.url || '',
@@ -42,6 +44,20 @@ export const SettingsView = ({
   const [organizerCreds, setOrganizerCreds] = useState(() => getStoredOrganizerCredentials());
   const [testingSupabase, setTestingSupabase] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+
+  if (currentUser && !isAdmin) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center max-w-lg mx-auto my-12 shadow-xs">
+        <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-xl mx-auto mb-3">
+          🔒
+        </div>
+        <h2 className="text-base font-bold text-slate-900 mb-1">Admin Privilege Required</h2>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          System settings, database infrastructure configurations, and cloud API keys can only be accessed by authorized tournament organizers and administrators.
+        </p>
+      </div>
+    );
+  }
 
   const handleSave = (e) => {
     e.preventDefault();

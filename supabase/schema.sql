@@ -1,14 +1,58 @@
 -- ==============================================================================
--- Warhawks Tournament Management System — Production Supabase Schema & RLS
--- Migration: 20261016_initial_warhawks_schema.sql
--- Description: Two-Role RBAC (organizer, player), full tournament management,
---              player & guest dietary requisition, sponsors, fixtures, and RLS policies.
+-- Warhawks Cricket Tournament Management System — Complete Master Schema
+-- File: supabase/schema.sql
+-- Description:
+--   Single consolidated SQL initialization file for Supabase PostgreSQL.
+--   Contains all table definitions, relationships, constraints, indexes,
+--   triggers, security definer functions, storage bucket setup, and
+--   strict Row Level Security (RLS) policies for Organizer and Player roles.
 -- ==============================================================================
 
--- 1. EXTENSIONS
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- ------------------------------------------------------------------------------
+-- 0. TEARDOWN & COMPLETE DATABASE RESET
+-- ------------------------------------------------------------------------------
+-- Drop all existing application tables in reverse dependency order
+DROP TABLE IF EXISTS public.audit_logs CASCADE;
+DROP TABLE IF EXISTS public.import_jobs CASCADE;
+DROP TABLE IF EXISTS public.media_assets CASCADE;
+DROP TABLE IF EXISTS public.rules CASCADE;
+DROP TABLE IF EXISTS public.auction_bids CASCADE;
+DROP TABLE IF EXISTS public.auction_configs CASCADE;
+DROP TABLE IF EXISTS public.expenses CASCADE;
+DROP TABLE IF EXISTS public.sponsors CASCADE;
+DROP TABLE IF EXISTS public.standings CASCADE;
+DROP TABLE IF EXISTS public.matches CASCADE;
+DROP TABLE IF EXISTS public.players CASCADE;
+DROP TABLE IF EXISTS public.teams CASCADE;
+DROP TABLE IF EXISTS public.registrations CASCADE;
+DROP TABLE IF EXISTS public.tournaments CASCADE;
+DROP TABLE IF EXISTS public.user_profiles CASCADE;
 
--- 2. ENUMS & DOMAINS
+-- Drop obsolete or legacy tables from old iterations
+DROP TABLE IF EXISTS public.food_orders CASCADE;
+DROP TABLE IF EXISTS public.food_order_records CASCADE;
+DROP TABLE IF EXISTS public.registration_applications CASCADE;
+DROP TABLE IF EXISTS public.tournament_rules CASCADE;
+
+-- Drop functions & types
+DROP FUNCTION IF EXISTS public.is_organizer() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.current_user_email() CASCADE;
+
+DROP TYPE IF EXISTS public.tournament_status CASCADE;
+DROP TYPE IF EXISTS public.match_status CASCADE;
+DROP TYPE IF EXISTS public.user_role CASCADE;
+DROP TYPE IF EXISTS public.dietary_preference CASCADE;
+
+-- ------------------------------------------------------------------------------
+-- 1. EXTENSIONS & PREREQUISITES
+-- ------------------------------------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ------------------------------------------------------------------------------
+-- 2. ENUMS & DOMAIN TYPES
+-- ------------------------------------------------------------------------------
 DO $$ BEGIN
   CREATE TYPE tournament_status AS ENUM ('upcoming', 'current', 'completed', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL;
@@ -29,7 +73,9 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 3. USER PROFILES TABLE (Linked with Supabase auth.users)
+-- ------------------------------------------------------------------------------
+-- 3. USER PROFILES TABLE (Supabase Auth Integration)
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
@@ -41,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Ensure non-organizers cannot grant themselves organizer access
+-- Trigger to safely auto-provision profile on new auth.users signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -50,7 +96,7 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
-    'player' -- Strict security: default all public signups to 'player'
+    'player' -- Default to player role; organizers must be elevated explicitly
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
@@ -62,7 +108,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Helper function to check if current authenticated user is an Organizer
+-- Security Definer function to check if current authenticated user is an Organizer
 CREATE OR REPLACE FUNCTION public.is_organizer()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -73,7 +119,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
+-- ------------------------------------------------------------------------------
 -- 4. TOURNAMENTS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.tournaments (
   id TEXT PRIMARY KEY DEFAULT ('tour-' || substr(md5(random()::text), 1, 10)),
   name TEXT NOT NULL,
@@ -88,7 +136,7 @@ CREATE TABLE IF NOT EXISTS public.tournaments (
   end_date DATE NOT NULL,
   venue TEXT NOT NULL,
   city TEXT NOT NULL,
-  registration_open BOOLEAN NOT NULL DEFAULT false,
+  registration_open BOOLEAN NOT NULL DEFAULT true,
   registration_start_date DATE,
   registration_end_date DATE,
   total_budget_points_per_team NUMERIC(14, 2) NOT NULL DEFAULT 10000000,
@@ -98,13 +146,18 @@ CREATE TABLE IF NOT EXISTS public.tournaments (
   min_squad_size INT NOT NULL DEFAULT 14,
   max_overseas_players INT NOT NULL DEFAULT 4,
   description TEXT,
+  upi_qr_code_url TEXT,
+  upi_id TEXT DEFAULT 'warhawks.sports@icici',
+  registration_fee NUMERIC(10, 2) DEFAULT 1500.00,
   is_archived BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT uq_tournament_edition UNIQUE (name, edition_number)
 );
 
+-- ------------------------------------------------------------------------------
 -- 5. TEAMS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.teams (
   id TEXT PRIMARY KEY DEFAULT ('team-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -125,7 +178,9 @@ CREATE TABLE IF NOT EXISTS public.teams (
   CONSTRAINT uq_team_tournament_short_code UNIQUE (tournament_id, short_code)
 );
 
+-- ------------------------------------------------------------------------------
 -- 6. PLAYERS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.players (
   id TEXT PRIMARY KEY DEFAULT ('ply-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -157,7 +212,9 @@ CREATE TABLE IF NOT EXISTS public.players (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+-- ------------------------------------------------------------------------------
 -- 7. MATCHES / FIXTURES TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.matches (
   id TEXT PRIMARY KEY DEFAULT ('mat-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -185,7 +242,9 @@ CREATE TABLE IF NOT EXISTS public.matches (
   CONSTRAINT uq_match_tournament_number UNIQUE (tournament_id, match_number)
 );
 
+-- ------------------------------------------------------------------------------
 -- 8. STANDINGS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.standings (
   id TEXT PRIMARY KEY DEFAULT ('std-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -204,7 +263,9 @@ CREATE TABLE IF NOT EXISTS public.standings (
   CONSTRAINT uq_standings_tournament_team UNIQUE (tournament_id, team_id)
 );
 
--- 9. SPONSORS TABLE (Streamlined: Sponsor Name, Contact Number, Financial Commitment)
+-- ------------------------------------------------------------------------------
+-- 9. SPONSORS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.sponsors (
   id TEXT PRIMARY KEY DEFAULT ('sp-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -220,7 +281,9 @@ CREATE TABLE IF NOT EXISTS public.sponsors (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 10. EXPENSES TABLE
+-- ------------------------------------------------------------------------------
+-- 10. EXPENSES TABLE (Financial Ledger)
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.expenses (
   id TEXT PRIMARY KEY DEFAULT ('exp-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -236,7 +299,9 @@ CREATE TABLE IF NOT EXISTS public.expenses (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 11. REGISTRATIONS TABLE (Dietary preferences & Breakfast/Lunch for players & guests)
+-- ------------------------------------------------------------------------------
+-- 11. REGISTRATIONS TABLE (Dietary preferences & Independent Guest Selections)
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.registrations (
   id TEXT PRIMARY KEY DEFAULT ('reg-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -254,12 +319,14 @@ CREATE TABLE IF NOT EXISTS public.registrations (
   has_breakfast BOOLEAN NOT NULL DEFAULT true,
   has_lunch BOOLEAN NOT NULL DEFAULT true,
   guest_count INT NOT NULL DEFAULT 0,
+  guests JSONB NOT NULL DEFAULT '[]'::jsonb,
   guest_food_preference dietary_preference NOT NULL DEFAULT 'Veg',
   has_guest_breakfast BOOLEAN NOT NULL DEFAULT false,
   has_guest_lunch BOOLEAN NOT NULL DEFAULT false,
-  catering_status TEXT NOT NULL DEFAULT 'requested', -- requested, confirmed, served
-  approval_status TEXT NOT NULL DEFAULT 'pending', -- pending, approved, rejected, waitlisted
+  catering_status TEXT NOT NULL DEFAULT 'requested',
+  approval_status TEXT NOT NULL DEFAULT 'pending',
   payment_status TEXT NOT NULL DEFAULT 'pending',
+  payment_reference TEXT,
   cric_heroes_profile_url TEXT,
   application_date TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   reviewed_by TEXT,
@@ -267,7 +334,36 @@ CREATE TABLE IF NOT EXISTS public.registrations (
   CONSTRAINT uq_registration_tournament_email UNIQUE (tournament_id, email)
 );
 
--- 12. TOURNAMENT RULES TABLE
+-- ------------------------------------------------------------------------------
+-- 12. AUCTION CONFIGS TABLE
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.auction_configs (
+  tournament_id TEXT PRIMARY KEY REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  base_budget NUMERIC(14, 2) NOT NULL DEFAULT 10000000,
+  bid_increments JSONB NOT NULL DEFAULT '[{"upTo": 1000000, "increment": 50000}, {"upTo": 5000000, "increment": 100000}, {"upTo": 10000000, "increment": 250000}]'::JSONB,
+  is_auction_live BOOLEAN NOT NULL DEFAULT false,
+  active_player_id TEXT,
+  current_highest_bid NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  current_leading_team_id TEXT,
+  auction_demo_video_url TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- ------------------------------------------------------------------------------
+-- 13. AUCTION BIDS TABLE
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.auction_bids (
+  id TEXT PRIMARY KEY DEFAULT ('bid-' || substr(md5(random()::text), 1, 10)),
+  tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  player_id TEXT NOT NULL,
+  team_id TEXT NOT NULL,
+  amount NUMERIC(14, 2) NOT NULL,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- ------------------------------------------------------------------------------
+-- 14. TOURNAMENT RULES TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.rules (
   id TEXT PRIMARY KEY DEFAULT ('rule-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -279,7 +375,9 @@ CREATE TABLE IF NOT EXISTS public.rules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 13. MEDIA ASSETS TABLE
+-- ------------------------------------------------------------------------------
+-- 15. MEDIA ASSETS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.media_assets (
   id TEXT PRIMARY KEY DEFAULT ('med-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -292,7 +390,9 @@ CREATE TABLE IF NOT EXISTS public.media_assets (
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 14. IMPORT JOBS TABLE
+-- ------------------------------------------------------------------------------
+-- 16. IMPORT JOBS TABLE (CricHeroes & Spreadsheets)
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.import_jobs (
   id TEXT PRIMARY KEY DEFAULT ('job-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -308,7 +408,9 @@ CREATE TABLE IF NOT EXISTS public.import_jobs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 15. AUDIT LOGS TABLE
+-- ------------------------------------------------------------------------------
+-- 17. AUDIT LOGS TABLE
+-- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.audit_logs (
   id TEXT PRIMARY KEY DEFAULT ('log-' || substr(md5(random()::text), 1, 10)),
   tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -321,11 +423,67 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   timestamp TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ==============================================================================
+-- ------------------------------------------------------------------------------
+-- 18. PERFORMANCE INDEXES
+-- ------------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_teams_tournament ON public.teams (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_players_tournament ON public.players (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_players_team ON public.players (team_id);
+CREATE INDEX IF NOT EXISTS idx_matches_tournament ON public.matches (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_matches_status ON public.matches (tournament_id, status);
+CREATE INDEX IF NOT EXISTS idx_standings_tournament ON public.standings (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_sponsors_tournament ON public.sponsors (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_tournament ON public.expenses (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_tournament ON public.registrations (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_email ON public.registrations (email);
+CREATE INDEX IF NOT EXISTS idx_registrations_payment ON public.registrations (tournament_id, payment_status);
+CREATE INDEX IF NOT EXISTS idx_auction_configs_tournament ON public.auction_configs (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_tournament ON public.auction_bids (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_player ON public.auction_bids (player_id);
+CREATE INDEX IF NOT EXISTS idx_rules_tournament ON public.rules (tournament_id);
+CREATE INDEX IF NOT EXISTS idx_media_tournament ON public.media_assets (tournament_id);
 
--- Enable RLS across all tables
+-- ------------------------------------------------------------------------------
+-- 19. SUPABASE STORAGE BUCKET CONFIGURATION (UPI QR & Media Assets)
+-- ------------------------------------------------------------------------------
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'tournament-assets',
+  'tournament-assets',
+  true,
+  5242880, -- 5MB limit
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']::text[];
+
+-- Storage Object Policies
+DROP POLICY IF EXISTS "Public can view tournament assets and UPI QR codes" ON storage.objects;
+CREATE POLICY "Public can view tournament assets and UPI QR codes"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'tournament-assets');
+
+DROP POLICY IF EXISTS "Organizers can upload tournament assets" ON storage.objects;
+CREATE POLICY "Organizers can upload tournament assets"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'tournament-assets');
+
+DROP POLICY IF EXISTS "Organizers can update tournament assets" ON storage.objects;
+CREATE POLICY "Organizers can update tournament assets"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'tournament-assets')
+  WITH CHECK (bucket_id = 'tournament-assets');
+
+DROP POLICY IF EXISTS "Organizers can delete tournament assets" ON storage.objects;
+CREATE POLICY "Organizers can delete tournament assets"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'tournament-assets');
+
+-- ------------------------------------------------------------------------------
+-- 20. ROW LEVEL SECURITY (RLS) POLICIES
+-- ------------------------------------------------------------------------------
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
@@ -335,6 +493,8 @@ ALTER TABLE public.standings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sponsors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.auction_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.auction_bids ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.import_jobs ENABLE ROW LEVEL SECURITY;
@@ -345,12 +505,6 @@ DROP POLICY IF EXISTS "Users can view their own profile" ON public.user_profiles
 CREATE POLICY "Users can view their own profile"
   ON public.user_profiles FOR SELECT
   USING (auth.uid() = id OR public.is_organizer());
-
-DROP POLICY IF EXISTS "Users can update their personal profile info (except role)" ON public.user_profiles;
-CREATE POLICY "Users can update their personal profile info (except role)"
-  ON public.user_profiles FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id AND role = (SELECT role FROM public.user_profiles WHERE id = auth.uid()));
 
 DROP POLICY IF EXISTS "Organizers can view and manage all user profiles" ON public.user_profiles;
 CREATE POLICY "Organizers can view and manage all user profiles"
@@ -434,75 +588,79 @@ CREATE POLICY "Only organizers can manage expenses"
   ON public.expenses FOR ALL
   USING (public.is_organizer());
 
--- REGISTRATIONS POLICIES (PLAYERS SELF-REGISTER & CAN VIEW OWN; ORGANIZERS FULL ACCESS)
-DROP POLICY IF EXISTS "Players can view their own registration" ON public.registrations;
-CREATE POLICY "Players can view their own registration"
-  ON public.registrations FOR SELECT
-  USING (
-    email = (SELECT email FROM public.user_profiles WHERE id = auth.uid())
-    OR public.is_organizer()
-  );
-
-DROP POLICY IF EXISTS "Players can submit their tournament application" ON public.registrations;
-CREATE POLICY "Players can submit their tournament application"
+-- REGISTRATIONS POLICIES
+-- 1. Public players (both authenticated and unauthenticated guests) can register without an account
+DROP POLICY IF EXISTS "Public players can submit tournament registration" ON public.registrations;
+CREATE POLICY "Public players can submit tournament registration"
   ON public.registrations FOR INSERT
   WITH CHECK (
-    -- Verify registration portal is currently open
     EXISTS (
       SELECT 1 FROM public.tournaments
       WHERE id = tournament_id AND registration_open = true
     )
   );
 
-DROP POLICY IF EXISTS "Players can cancel their own pending registration" ON public.registrations;
-CREATE POLICY "Players can cancel their own pending registration"
-  ON public.registrations FOR DELETE
-  USING (
-    approval_status = 'pending' AND (
-      email = (SELECT email FROM public.user_profiles WHERE id = auth.uid())
-      OR public.is_organizer()
-    )
-  );
+-- 2. Public read of registrations or players checking admission
+DROP POLICY IF EXISTS "Public players can view registrations" ON public.registrations;
+CREATE POLICY "Public players can view registrations"
+  ON public.registrations FOR SELECT
+  USING (true);
 
-DROP POLICY IF EXISTS "Organizers have full control over registrations" ON public.registrations;
-CREATE POLICY "Organizers have full control over registrations"
+-- 3. Organizers have full management over registrations
+DROP POLICY IF EXISTS "Organizers can manage registrations" ON public.registrations;
+CREATE POLICY "Organizers can manage registrations"
   ON public.registrations FOR ALL
   USING (public.is_organizer());
 
--- RULES POLICIES
-DROP POLICY IF EXISTS "Public & Players can view published rules" ON public.rules;
-CREATE POLICY "Public & Players can view published rules"
+-- AUCTION CONFIGS & BIDS POLICIES
+DROP POLICY IF EXISTS "Public & Players can view auction config" ON public.auction_configs;
+CREATE POLICY "Public & Players can view auction config"
+  ON public.auction_configs FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Organizers can manage auction config" ON public.auction_configs;
+CREATE POLICY "Organizers can manage auction config"
+  ON public.auction_configs FOR ALL
+  USING (public.is_organizer());
+
+DROP POLICY IF EXISTS "Public & Players can view auction bids" ON public.auction_bids;
+CREATE POLICY "Public & Players can view auction bids"
+  ON public.auction_bids FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Organizers can insert and manage auction bids" ON public.auction_bids;
+CREATE POLICY "Organizers can insert and manage auction bids"
+  ON public.auction_bids FOR ALL
+  USING (public.is_organizer());
+
+-- RULES & MEDIA ASSETS POLICIES
+DROP POLICY IF EXISTS "Public can view published rules" ON public.rules;
+CREATE POLICY "Public can view published rules"
   ON public.rules FOR SELECT
   USING (is_published = true OR public.is_organizer());
 
-DROP POLICY IF EXISTS "Organizers can manage tournament rules" ON public.rules;
-CREATE POLICY "Organizers can manage tournament rules"
+DROP POLICY IF EXISTS "Organizers can manage rules" ON public.rules;
+CREATE POLICY "Organizers can manage rules"
   ON public.rules FOR ALL
   USING (public.is_organizer());
 
--- MEDIA ASSETS POLICIES
-DROP POLICY IF EXISTS "Public & Players can view media assets" ON public.media_assets;
-CREATE POLICY "Public & Players can view media assets"
+DROP POLICY IF EXISTS "Public can view media assets" ON public.media_assets;
+CREATE POLICY "Public can view media assets"
   ON public.media_assets FOR SELECT
   USING (true);
 
-DROP POLICY IF EXISTS "Organizers can upload and manage media" ON public.media_assets;
-CREATE POLICY "Organizers can upload and manage media"
+DROP POLICY IF EXISTS "Organizers can manage media assets" ON public.media_assets;
+CREATE POLICY "Organizers can manage media assets"
   ON public.media_assets FOR ALL
   USING (public.is_organizer());
 
--- IMPORT JOBS & AUDIT LOGS (ORGANIZERS ONLY)
-DROP POLICY IF EXISTS "Organizers can view and record import jobs" ON public.import_jobs;
-CREATE POLICY "Organizers can view and record import jobs"
+-- IMPORT JOBS & AUDIT LOGS (ORGANIZER ONLY)
+DROP POLICY IF EXISTS "Organizers can manage import jobs" ON public.import_jobs;
+CREATE POLICY "Organizers can manage import jobs"
   ON public.import_jobs FOR ALL
   USING (public.is_organizer());
 
-DROP POLICY IF EXISTS "Organizers can view audit logs" ON public.audit_logs;
-CREATE POLICY "Organizers can view audit logs"
-  ON public.audit_logs FOR SELECT
+DROP POLICY IF EXISTS "Organizers can manage audit logs" ON public.audit_logs;
+CREATE POLICY "Organizers can manage audit logs"
+  ON public.audit_logs FOR ALL
   USING (public.is_organizer());
-
-DROP POLICY IF EXISTS "Audit logs insertion allowed" ON public.audit_logs;
-CREATE POLICY "Audit logs insertion allowed"
-  ON public.audit_logs FOR INSERT
-  WITH CHECK (true);

@@ -21,7 +21,9 @@ import { ImportHistoryView } from './components/views/ImportHistoryView';
 import { UserAccessView } from './components/views/UserAccessView';
 import { SettingsView } from './components/views/SettingsView';
 import { OrganizerLoginModal } from './components/common/OrganizerLoginModal';
+import { DatabaseStatusModal } from './components/common/DatabaseStatusModal';
 import { getOrganizerSession, logoutOrganizer } from './services/auth';
+import { isSupabaseConfigured } from './services/supabase';
 
 export default function App() {
   const organizerSession = getOrganizerSession();
@@ -33,6 +35,8 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [organizerLoginModalOpen, setOrganizerLoginModalOpen] = useState(false);
+  const [databaseModalOpen, setDatabaseModalOpen] = useState(false);
+  const [isDbConnected, setIsDbConnected] = useState(() => isSupabaseConfigured());
 
   // Database snapshot states
   const [tournaments, setTournaments] = useState(() => db.getTournaments());
@@ -113,7 +117,64 @@ export default function App() {
 
   useEffect(() => {
     refreshTournamentData(activeTournamentId);
+    if (activeTournamentId && isSupabaseConfigured()) {
+      db.syncTournamentData(activeTournamentId).then(() => {
+        refreshTournamentData(activeTournamentId);
+      });
+    }
   }, [activeTournamentId]);
+
+  // Initial cloud sync on mount
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      db.initSupabaseSync().then(() => {
+        const list = db.getTournaments();
+        setTournaments(list);
+        if (list.length > 0 && !activeTournamentId) {
+          setActiveTournamentId(list[0].id);
+          db.syncTournamentData(list[0].id).then(() => {
+            refreshTournamentData(list[0].id);
+          });
+        }
+      });
+    }
+  }, []);
+
+  // Synchronize database connection state
+  useEffect(() => {
+    const handleConfigChange = () => {
+      const configured = isSupabaseConfigured();
+      setIsDbConnected(configured);
+      if (configured) {
+        db.initSupabaseSync().then(() => {
+          const list = db.getTournaments();
+          setTournaments(list);
+          if (list.length > 0 && !activeTournamentId) {
+            setActiveTournamentId(list[0].id);
+          }
+          refreshTournamentData(activeTournamentId || list[0]?.id);
+        });
+      }
+    };
+
+    window.addEventListener('supabase-config-changed', handleConfigChange);
+    return () => window.removeEventListener('supabase-config-changed', handleConfigChange);
+  }, [activeTournamentId]);
+
+  const handleDatabaseConnectionUpdated = () => {
+    const configured = isSupabaseConfigured();
+    setIsDbConnected(configured);
+    if (configured) {
+      db.initSupabaseSync().then(() => {
+        const list = db.getTournaments();
+        setTournaments(list);
+        if (list.length > 0 && !activeTournamentId) {
+          setActiveTournamentId(list[0].id);
+        }
+        refreshTournamentData(activeTournamentId || list[0]?.id);
+      });
+    }
+  };
 
   const showToast = (message, type = 'success') => {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -481,6 +542,8 @@ export default function App() {
         onCloseMobile={() => setMobileSidebarOpen(false)}
         onOpenOrganizerLogin={() => setOrganizerLoginModalOpen(true)}
         onLogout={handleOrganizerLogout}
+        onOpenDatabaseModal={() => setDatabaseModalOpen(true)}
+        isDbConnected={isDbConnected}
       />
 
       {/* Main Content Area */}
@@ -497,6 +560,8 @@ export default function App() {
           onQuickAction={handleQuickAction}
           onOpenOrganizerLogin={() => setOrganizerLoginModalOpen(true)}
           onLogout={handleOrganizerLogout}
+          onOpenDatabaseModal={() => setDatabaseModalOpen(true)}
+          isDbConnected={isDbConnected}
         />
 
         {/* Viewport Content Canvas */}
@@ -696,6 +761,7 @@ export default function App() {
                 <SettingsView
                   settings={settings}
                   tournament={activeTournament}
+                  currentUser={currentUser}
                   onUpdateSettings={updates => {
                     db.updateSettings(updates);
                     setSettings(db.getSettings());
@@ -732,6 +798,16 @@ export default function App() {
         isOpen={organizerLoginModalOpen}
         onClose={() => setOrganizerLoginModalOpen(false)}
         onSuccess={handleOrganizerLoginSuccess}
+        onShowToast={showToast}
+      />
+
+      {/* Database Connection & Diagnostics Modal (Strictly Restricted to Admin) */}
+      <DatabaseStatusModal
+        isOpen={databaseModalOpen}
+        onClose={() => setDatabaseModalOpen(false)}
+        currentUser={currentUser}
+        onOpenOrganizerLogin={() => setOrganizerLoginModalOpen(true)}
+        onConnectionUpdated={handleDatabaseConnectionUpdated}
         onShowToast={showToast}
       />
     </div>

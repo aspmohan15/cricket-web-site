@@ -1,5 +1,6 @@
 // Supabase Client Architecture for Warhawks Tournament Management
 import { createClient } from '@supabase/supabase-js';
+import { isOrganizerAuthenticated } from './auth';
 
 const STORAGE_SETTINGS_KEY = 'warhawks_supabase_config_v1';
 
@@ -61,9 +62,13 @@ export const getSupabaseClient = () => {
 };
 
 /**
- * Updates the Supabase configuration at runtime (e.g. from Settings View)
+ * Updates the Supabase configuration at runtime (Strictly restricted to Admin / Organizer)
  */
 export const updateSupabaseConfig = (url, anonKey) => {
+  if (!isOrganizerAuthenticated()) {
+    throw new Error('Access Denied: Only tournament administrators can modify database connection credentials.');
+  }
+
   activeConfig = { url: (url || '').trim(), anonKey: (anonKey || '').trim() };
   try {
     localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(activeConfig));
@@ -71,20 +76,64 @@ export const updateSupabaseConfig = (url, anonKey) => {
     // ignore
   }
   supabaseInstance = null; // force re-instantiation
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('supabase-config-changed', { detail: activeConfig }));
+  }
   return getSupabaseClient();
 };
 
 /**
- * Returns current configuration (safe for UI)
+ * Clears runtime configuration and reverts to local store (Strictly restricted to Admin)
  */
-export const getSupabaseConfig = () => {
-  return { ...activeConfig };
+export const clearSupabaseConfig = () => {
+  if (!isOrganizerAuthenticated()) {
+    throw new Error('Access Denied: Only tournament administrators can reset database connection credentials.');
+  }
+
+  activeConfig = {
+    url: '',
+    anonKey: ''
+  };
+  try {
+    localStorage.removeItem(STORAGE_SETTINGS_KEY);
+  } catch {
+    // ignore
+  }
+  supabaseInstance = null;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('supabase-config-changed', { detail: activeConfig }));
+  }
+  return true;
+};
+
+/**
+ * Returns current configuration.
+ * Sensitive API keys are masked unless the active user is an authorized Organizer/Admin.
+ */
+export const getSupabaseConfig = (allowUnauthenticated = false) => {
+  const isAdmin = isOrganizerAuthenticated();
+  if (isAdmin || allowUnauthenticated) {
+    return { ...activeConfig };
+  }
+  // Mask sensitive database parameters from regular players
+  return {
+    url: activeConfig.url ? `${activeConfig.url.slice(0, 15)}...[Admin Only]` : '',
+    anonKey: activeConfig.anonKey ? '••••••••••••••••[Admin Protected]' : ''
+  };
 };
 
 /**
  * Live test to verify Supabase connectivity and credential validity
+ * Restricted to Admin / Organizer session
  */
 export const testSupabaseConnection = async (testUrl, testAnonKey) => {
+  if (!isOrganizerAuthenticated()) {
+    return {
+      connected: false,
+      message: 'Access Denied: Database diagnostics and credential tests are restricted to Administrators.'
+    };
+  }
+
   const url = (testUrl || activeConfig.url || '').trim();
   const anonKey = (testAnonKey || activeConfig.anonKey || '').trim();
 
