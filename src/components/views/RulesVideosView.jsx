@@ -35,8 +35,12 @@ export const RulesVideosView = ({
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreateModalOpen(false);
+      return;
+    }
     onCreateRule({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       title: form.title,
       category: form.category,
       content: form.content,
@@ -46,6 +50,20 @@ export const RulesVideosView = ({
     setCreateModalOpen(false);
   };
 
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          📜
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Official tournament rules and demo videos are organized by edition. Select or create an edition to view sanctioned policies.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,7 +71,7 @@ export const RulesVideosView = ({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Tournament Rules & Official Demo Videos</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Official playing conditions, disciplinary code, auction policies, and video guides sanctioned by Warhawks for {tournament.name}.
+            Official playing conditions, disciplinary code, auction policies, and video guides sanctioned by Warhawks for {tournament?.name || 'Tournament'}.
           </p>
         </div>
 
@@ -183,7 +201,7 @@ export const RulesVideosView = ({
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Add Tournament Regulation / Policy"
-        subtitle={`Rules will be enforced by Warhawks Tournament Operations across ${tournament.name}`}
+        subtitle={`Rules will be enforced by Warhawks Tournament Operations across ${tournament?.name || 'Tournament Edition'}`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
           <div>

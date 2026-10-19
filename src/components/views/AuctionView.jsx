@@ -30,13 +30,13 @@ export const AuctionView = ({
   const isOrganizer = currentUser?.role === 'organizer';
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(
-    auctionConfig.activePlayerId || players.find(p => p.auctionStatus === 'available')?.id || ''
+    auctionConfig?.activePlayerId || players.find(p => p.auctionStatus === 'available')?.id || ''
   );
   const [bidStatusMessage, setBidStatusMessage] = useState(null);
 
   const activePlayer = players.find(p => p.id === selectedPlayerId);
-  const leadingTeam = teams.find(t => t.id === auctionConfig.currentLeadingTeamId);
-  const currentBid = auctionConfig.currentHighestBid || activePlayer?.basePrice || 500000;
+  const leadingTeam = teams.find(t => t.id === auctionConfig?.currentLeadingTeamId);
+  const currentBid = auctionConfig?.currentHighestBid || activePlayer?.basePrice || 500000;
 
   const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
   const unsoldPlayers = players.filter(p => p.auctionStatus === 'unsold');
@@ -86,6 +86,20 @@ export const AuctionView = ({
     }
   };
 
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          🔨
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          The player auction stage belongs to an active tournament edition. Select or initialize a tournament edition to start the auction gavel.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -97,7 +111,7 @@ export const AuctionView = ({
           </div>
           <h1 className="text-xl font-bold text-slate-900">Franchise Player Auction Stage</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Live player point bidding, franchise purse tracking, squad constraints, and auction gavel operations conducted by Warhawks for {tournament.name}.
+            Live player point bidding, franchise purse tracking, squad constraints, and auction gavel operations conducted by Warhawks for {tournament?.name || 'Tournament'}.
           </p>
         </div>
 
@@ -392,7 +406,7 @@ export const AuctionView = ({
 
                     <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                       <span>Spent: ₹{(team.budgetSpent / 100000).toFixed(1)}L</span>
-                      <span>Squad: {team.totalPlayersAssigned}/{tournament.maxSquadSize}</span>
+                      <span>Squad: {team.totalPlayersAssigned}/{tournament?.maxSquadSize || 18}</span>
                     </div>
                   </div>
                 );

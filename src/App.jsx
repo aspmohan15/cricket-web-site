@@ -81,7 +81,16 @@ export default function App() {
     const currentTournaments = db.getTournaments();
     setTournaments(currentTournaments);
 
-    if (!tId) {
+    // Resolve target tournament ID safely
+    let resolvedId = tId || activeTournamentId;
+    if (!resolvedId || !currentTournaments.some(t => t.id === resolvedId)) {
+      resolvedId = currentTournaments[0]?.id || null;
+    }
+    if (resolvedId && resolvedId !== activeTournamentId) {
+      setActiveTournamentId(resolvedId);
+    }
+
+    if (!resolvedId) {
       setTeams([]);
       setPlayers([]);
       setMatches([]);
@@ -99,19 +108,19 @@ export default function App() {
       return;
     }
 
-    setTeams(db.getTeams(tId));
-    setPlayers(db.getPlayers(tId));
-    setMatches(db.getMatches(tId));
-    setStandings(db.getStandings(tId));
-    setAuctionConfig(db.getAuctionConfig(tId));
-    setSponsors(db.getSponsors(tId));
-    setExpenses(db.getExpenses(tId));
-    setFoodOrders(db.getFoodOrders(tId));
-    setRules(db.getRules(tId));
-    setRegistrations(db.getRegistrations(tId));
-    setMediaAssets(db.getMediaAssets(tId));
-    setImportJobs(db.getImportJobs(tId));
-    setAuditLogs(db.getAuditLogs(tId));
+    setTeams(db.getTeams(resolvedId));
+    setPlayers(db.getPlayers(resolvedId));
+    setMatches(db.getMatches(resolvedId));
+    setStandings(db.getStandings(resolvedId));
+    setAuctionConfig(db.getAuctionConfig(resolvedId));
+    setSponsors(db.getSponsors(resolvedId));
+    setExpenses(db.getExpenses(resolvedId));
+    setFoodOrders(db.getFoodOrders(resolvedId));
+    setRules(db.getRules(resolvedId));
+    setRegistrations(db.getRegistrations(resolvedId));
+    setMediaAssets(db.getMediaAssets(resolvedId));
+    setImportJobs(db.getImportJobs(resolvedId));
+    setAuditLogs(db.getAuditLogs(resolvedId));
     setSettings(db.getSettings());
   };
 
@@ -294,8 +303,13 @@ export default function App() {
 
   // Team CRUD
   const handleCreateTeam = (data) => {
-    db.createTeam(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot create team: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createTeam({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast(`Team ${data.name} created!`, 'success');
   };
 
@@ -313,8 +327,13 @@ export default function App() {
 
   // Player CRUD
   const handleCreatePlayer = (data) => {
-    db.createPlayer(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot add player: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createPlayer({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast(`Player ${data.name} added to roster`, 'success');
   };
 
@@ -332,8 +351,13 @@ export default function App() {
 
   // Match CRUD & CricHeroes
   const handleCreateMatch = (data) => {
-    db.createMatch(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot schedule match: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createMatch({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast(`Match #${data.matchNumber} scheduled!`, 'success');
   };
 
@@ -373,8 +397,13 @@ export default function App() {
 
   // Sponsors
   const handleCreateSponsor = (data) => {
-    db.createSponsor(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot add sponsor: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createSponsor({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast('Sponsor partnership logged', 'success');
   };
 
@@ -392,8 +421,13 @@ export default function App() {
 
   // Expenses
   const handleCreateExpense = (data) => {
-    db.createExpense(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot record expense: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createExpense({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast('Expense voucher recorded in financial ledger', 'success');
   };
 
@@ -418,8 +452,13 @@ export default function App() {
 
   // Rules
   const handleCreateRule = (data) => {
-    db.createRule(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot publish rule: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.createRule({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast('Rule clause published', 'success');
   };
 
@@ -471,8 +510,13 @@ export default function App() {
 
   // Media
   const handleAddMedia = (data) => {
-    db.addMediaAsset(data);
-    refreshTournamentData(activeTournamentId);
+    const targetTournamentId = data.tournamentId || activeTournamentId || activeTournament?.id;
+    if (!targetTournamentId) {
+      showToast('Cannot add media: No active tournament edition selected. Create an edition first.', 'error');
+      return;
+    }
+    db.addMediaAsset({ ...data, tournamentId: targetTournamentId });
+    refreshTournamentData(targetTournamentId);
     showToast('Media uploaded to library', 'success');
   };
 
@@ -634,6 +678,7 @@ export default function App() {
                   onUpdatePlayer={handleUpdatePlayer}
                   onDeletePlayer={handleDeletePlayer}
                   onOpenImport={() => setCurrentSection('import_history')}
+                  onNavigateToEditions={() => setCurrentSection('editions')}
                 />
               )}
 
@@ -648,6 +693,7 @@ export default function App() {
                   onUpdateMatch={handleUpdateMatch}
                   onDeleteMatch={handleDeleteMatch}
                   onOpenImport={() => setCurrentSection('import_history')}
+                  onNavigateToEditions={() => setCurrentSection('editions')}
                 />
               )}
 

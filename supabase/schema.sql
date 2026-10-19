@@ -108,14 +108,20 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Security Definer function to check if current authenticated user is an Organizer
+-- Security Definer function to check if current user has organizer administrative authority
 CREATE OR REPLACE FUNCTION public.is_organizer()
 RETURNS BOOLEAN AS $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.user_profiles
-    WHERE id = auth.uid() AND role = 'organizer'
-  );
+  -- If user is signed in with a Supabase Auth session, verify their assigned role in user_profiles
+  IF auth.uid() IS NOT NULL THEN
+    RETURN EXISTS (
+      SELECT 1 FROM public.user_profiles
+      WHERE id = auth.uid() AND role = 'organizer'
+    );
+  END IF;
+
+  -- Default to false for anonymous / unverified client requests (enforces strict RLS)
+  RETURN false;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
@@ -509,7 +515,8 @@ CREATE POLICY "Users can view their own profile"
 DROP POLICY IF EXISTS "Organizers can view and manage all user profiles" ON public.user_profiles;
 CREATE POLICY "Organizers can view and manage all user profiles"
   ON public.user_profiles FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- TOURNAMENTS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view published non-archived tournaments" ON public.tournaments;
@@ -520,7 +527,8 @@ CREATE POLICY "Public & Players can view published non-archived tournaments"
 DROP POLICY IF EXISTS "Organizers have full control over tournaments" ON public.tournaments;
 CREATE POLICY "Organizers have full control over tournaments"
   ON public.tournaments FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- TEAMS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view teams" ON public.teams;
@@ -531,7 +539,8 @@ CREATE POLICY "Public & Players can view teams"
 DROP POLICY IF EXISTS "Organizers can manage teams" ON public.teams;
 CREATE POLICY "Organizers can manage teams"
   ON public.teams FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- PLAYERS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view players" ON public.players;
@@ -542,7 +551,8 @@ CREATE POLICY "Public & Players can view players"
 DROP POLICY IF EXISTS "Organizers can manage players" ON public.players;
 CREATE POLICY "Organizers can manage players"
   ON public.players FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- MATCHES POLICIES
 DROP POLICY IF EXISTS "Public & Players can view matches" ON public.matches;
@@ -553,7 +563,8 @@ CREATE POLICY "Public & Players can view matches"
 DROP POLICY IF EXISTS "Organizers can manage fixtures, scores, and results" ON public.matches;
 CREATE POLICY "Organizers can manage fixtures, scores, and results"
   ON public.matches FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- STANDINGS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view standings" ON public.standings;
@@ -564,7 +575,8 @@ CREATE POLICY "Public & Players can view standings"
 DROP POLICY IF EXISTS "Organizers can manage standings" ON public.standings;
 CREATE POLICY "Organizers can manage standings"
   ON public.standings FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- SPONSORS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view active public sponsors" ON public.sponsors;
@@ -575,7 +587,8 @@ CREATE POLICY "Public & Players can view active public sponsors"
 DROP POLICY IF EXISTS "Organizers can manage sponsors" ON public.sponsors;
 CREATE POLICY "Organizers can manage sponsors"
   ON public.sponsors FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- EXPENSES POLICIES (ORGANIZER ONLY)
 DROP POLICY IF EXISTS "Only organizers can view expenses" ON public.expenses;
@@ -586,7 +599,8 @@ CREATE POLICY "Only organizers can view expenses"
 DROP POLICY IF EXISTS "Only organizers can manage expenses" ON public.expenses;
 CREATE POLICY "Only organizers can manage expenses"
   ON public.expenses FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- REGISTRATIONS POLICIES
 -- 1. Public players (both authenticated and unauthenticated guests) can register without an account
@@ -598,6 +612,7 @@ CREATE POLICY "Public players can submit tournament registration"
       SELECT 1 FROM public.tournaments
       WHERE id = tournament_id AND registration_open = true
     )
+    OR public.is_organizer()
   );
 
 -- 2. Public read of registrations or players checking admission
@@ -610,7 +625,8 @@ CREATE POLICY "Public players can view registrations"
 DROP POLICY IF EXISTS "Organizers can manage registrations" ON public.registrations;
 CREATE POLICY "Organizers can manage registrations"
   ON public.registrations FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- AUCTION CONFIGS & BIDS POLICIES
 DROP POLICY IF EXISTS "Public & Players can view auction config" ON public.auction_configs;
@@ -621,7 +637,8 @@ CREATE POLICY "Public & Players can view auction config"
 DROP POLICY IF EXISTS "Organizers can manage auction config" ON public.auction_configs;
 CREATE POLICY "Organizers can manage auction config"
   ON public.auction_configs FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 DROP POLICY IF EXISTS "Public & Players can view auction bids" ON public.auction_bids;
 CREATE POLICY "Public & Players can view auction bids"
@@ -631,7 +648,8 @@ CREATE POLICY "Public & Players can view auction bids"
 DROP POLICY IF EXISTS "Organizers can insert and manage auction bids" ON public.auction_bids;
 CREATE POLICY "Organizers can insert and manage auction bids"
   ON public.auction_bids FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- RULES & MEDIA ASSETS POLICIES
 DROP POLICY IF EXISTS "Public can view published rules" ON public.rules;
@@ -642,7 +660,8 @@ CREATE POLICY "Public can view published rules"
 DROP POLICY IF EXISTS "Organizers can manage rules" ON public.rules;
 CREATE POLICY "Organizers can manage rules"
   ON public.rules FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 DROP POLICY IF EXISTS "Public can view media assets" ON public.media_assets;
 CREATE POLICY "Public can view media assets"
@@ -652,15 +671,18 @@ CREATE POLICY "Public can view media assets"
 DROP POLICY IF EXISTS "Organizers can manage media assets" ON public.media_assets;
 CREATE POLICY "Organizers can manage media assets"
   ON public.media_assets FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 -- IMPORT JOBS & AUDIT LOGS (ORGANIZER ONLY)
 DROP POLICY IF EXISTS "Organizers can manage import jobs" ON public.import_jobs;
 CREATE POLICY "Organizers can manage import jobs"
   ON public.import_jobs FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());
 
 DROP POLICY IF EXISTS "Organizers can manage audit logs" ON public.audit_logs;
 CREATE POLICY "Organizers can manage audit logs"
   ON public.audit_logs FOR ALL
-  USING (public.is_organizer());
+  USING (public.is_organizer())
+  WITH CHECK (public.is_organizer());

@@ -40,7 +40,8 @@ export const RegistrationView = ({
   onUpdateRegistrationDates,
   onUpdateStatus,
   onPlayerRegister,
-  onCancelRegistration
+  onCancelRegistration,
+  onNavigateToEditions
 }) => {
   const isOrganizer = currentUser?.role === 'organizer';
 
@@ -188,8 +189,12 @@ export const RegistrationView = ({
       });
     }
 
+    if (!tournament?.id) {
+      return;
+    }
+
     onPlayerRegister({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       ...playerForm,
       guestCount: gCount,
       guests: sanitizedGuests
@@ -210,6 +215,31 @@ export const RegistrationView = ({
       guestCount: gCount
     };
   };
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          📋
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Tournament Open for Registration</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          {isOrganizer
+            ? "There are currently no tournament editions created in the database. Please create a tournament edition in the 'Tournament Editions' module to configure and open player registrations."
+            : "There are currently no active tournament editions open for player registration. Please check back soon or contact Warhawks tournament administration."}
+        </p>
+        {isOrganizer && (
+          <button
+            type="button"
+            onClick={onNavigateToEditions}
+            className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+          >
+            Create Tournament Edition
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">
@@ -247,15 +277,15 @@ export const RegistrationView = ({
             </button>
 
             <button
-              onClick={() => onToggleRegistration(!tournament.registrationOpen)}
+              onClick={() => onToggleRegistration(!tournament?.registrationOpen)}
               className={`flex items-center justify-center gap-2 px-4 py-2 min-h-[38px] rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                tournament.registrationOpen
+                tournament?.registrationOpen
                   ? 'bg-rose-600 hover:bg-rose-700 text-white'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
-              <span>{tournament.registrationOpen ? 'Close Portal' : 'Open Portal'}</span>
+              <span>{tournament?.registrationOpen ? 'Close Portal' : 'Open Portal'}</span>
             </button>
           </div>
         )}

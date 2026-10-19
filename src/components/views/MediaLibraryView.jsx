@@ -64,12 +64,11 @@ export const MediaLibraryView = ({
   const handleUploadSubmit = (e) => {
     e.preventDefault();
     if (!uploadForm.fileUrl) {
-      alert('Please select a file or provide a media URL');
       return;
     }
     const tags = uploadForm.tagsString.split(',').map(t => t.trim()).filter(Boolean);
     onAddMediaAsset({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       title: uploadForm.title,
       category: uploadForm.category,
       fileUrl: uploadForm.fileUrl,
@@ -91,6 +90,20 @@ export const MediaLibraryView = ({
     }
     return true;
   });
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          🖼️
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Media assets and branding files are organized by tournament edition. Select or initialize a tournament edition to upload logos and assets.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">

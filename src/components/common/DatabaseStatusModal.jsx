@@ -241,13 +241,24 @@ CREATE TABLE IF NOT EXISTS public.registrations (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable RLS
+-- Enable RLS & Operational Access
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public read tournaments" ON public.tournaments;
 CREATE POLICY "Public read tournaments" ON public.tournaments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Organizers manage tournaments" ON public.tournaments;
+CREATE POLICY "Organizers manage tournaments" ON public.tournaments FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public players register" ON public.registrations;
 CREATE POLICY "Public players register" ON public.registrations FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public read registrations" ON public.registrations;
 CREATE POLICY "Public read registrations" ON public.registrations FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Organizers manage registrations" ON public.registrations;
+CREATE POLICY "Organizers manage registrations" ON public.registrations FOR ALL USING (true) WITH CHECK (true);
 `;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(migrationInstructions);

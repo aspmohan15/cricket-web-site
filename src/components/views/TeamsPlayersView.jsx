@@ -27,7 +27,8 @@ export const TeamsPlayersView = ({
   onCreatePlayer,
   onUpdatePlayer,
   onDeletePlayer,
-  onOpenImport
+  onOpenImport,
+  onNavigateToEditions
 }) => {
   const isOrganizer = currentUser?.role === 'organizer';
   const [activeTab, setActiveTab] = useState('squads');
@@ -45,7 +46,7 @@ export const TeamsPlayersView = ({
   const [teamForm, setTeamForm] = useState({
     name: '',
     shortCode: '',
-    city: '',
+    city: tournament?.city || 'Mumbai',
     primaryColor: '#0284c7',
     secondaryColor: '#0f172a',
     ownerName: '',
@@ -74,17 +75,22 @@ export const TeamsPlayersView = ({
 
   const handleCreateTeamSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreateTeamModalOpen(false);
+      onNavigateToEditions?.();
+      return;
+    }
     onCreateTeam({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       name: teamForm.name,
-      shortCode: teamForm.shortCode.toUpperCase(),
-      city: teamForm.city,
-      primaryColor: teamForm.primaryColor,
-      secondaryColor: teamForm.secondaryColor,
-      ownerName: teamForm.ownerName,
-      budgetTotal: teamForm.budgetTotal,
+      shortCode: (teamForm.shortCode || 'TEAM').toUpperCase(),
+      city: teamForm.city || tournament?.city || 'Mumbai',
+      primaryColor: teamForm.primaryColor || '#0284c7',
+      secondaryColor: teamForm.secondaryColor || '#0f172a',
+      ownerName: teamForm.ownerName || 'Franchise Owner',
+      budgetTotal: Number(teamForm.budgetTotal) || tournament?.totalBudgetPointsPerTeam || 10000000,
       budgetSpent: 0,
-      budgetRemaining: teamForm.budgetTotal,
+      budgetRemaining: Number(teamForm.budgetTotal) || tournament?.totalBudgetPointsPerTeam || 10000000,
       totalPlayersAssigned: 0
     });
     setCreateTeamModalOpen(false);
@@ -92,24 +98,29 @@ export const TeamsPlayersView = ({
 
   const handleCreatePlayerSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreatePlayerModalOpen(false);
+      onNavigateToEditions?.();
+      return;
+    }
     onCreatePlayer({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       name: playerForm.name,
-      jerseyNumber: playerForm.jerseyNumber,
-      role: playerForm.role,
-      battingStyle: playerForm.battingStyle,
-      bowlingStyle: playerForm.bowlingStyle,
-      basePrice: playerForm.basePrice,
-      soldPrice: playerForm.teamId ? (playerForm.soldPrice || playerForm.basePrice) : undefined,
+      jerseyNumber: Number(playerForm.jerseyNumber) || 10,
+      role: playerForm.role || 'All-Rounder',
+      battingStyle: playerForm.battingStyle || 'Right-hand bat',
+      bowlingStyle: playerForm.bowlingStyle || 'Right-arm medium',
+      basePrice: Number(playerForm.basePrice) || 500000,
+      soldPrice: playerForm.teamId ? (Number(playerForm.soldPrice) || Number(playerForm.basePrice) || 500000) : undefined,
       teamId: playerForm.teamId || undefined,
       auctionStatus: playerForm.teamId ? 'sold' : 'available',
-      isCaptain: playerForm.isCaptain,
-      isOverseas: playerForm.isOverseas,
-      email: playerForm.email || `${playerForm.name.toLowerCase().replace(/\s+/g, '.')}@crickethq.local`,
+      isCaptain: Boolean(playerForm.isCaptain),
+      isOverseas: Boolean(playerForm.isOverseas),
+      email: playerForm.email || `${(playerForm.name || 'player').toLowerCase().replace(/\s+/g, '.')}@crickethq.local`,
       phone: playerForm.phone || '+91 98000 00000',
-      city: playerForm.city,
-      shirtSize: playerForm.shirtSize,
-      foodPreference: playerForm.foodPreference,
+      city: playerForm.city || tournament?.city || 'Mumbai',
+      shirtSize: playerForm.shirtSize || 'L',
+      foodPreference: playerForm.foodPreference || 'Veg',
       registrationStatus: 'approved',
       paymentStatus: 'paid',
       matchesPlayed: 0,
@@ -160,6 +171,29 @@ export const TeamsPlayersView = ({
     });
     exportToCsv(`${tournament?.name?.replace(/\s+/g, '_') || 'Tournament'}_Player_Roster`, rows);
   };
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          🏆
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Franchise teams, player rosters, and auction baselines belong to a specific tournament edition. Create your first edition in the <strong>Tournament Editions</strong> module to begin adding teams and player squads.
+        </p>
+        {isOrganizer && (
+          <button
+            type="button"
+            onClick={onNavigateToEditions}
+            className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+          >
+            Create Tournament Edition
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -748,7 +782,7 @@ export const TeamsPlayersView = ({
         isOpen={createTeamModalOpen}
         onClose={() => setCreateTeamModalOpen(false)}
         title="Add Franchise Team"
-        subtitle={`Create team for ${tournament?.name}`}
+        subtitle={`Create team for ${tournament?.name || 'Tournament Edition'}`}
       >
         <form onSubmit={handleCreateTeamSubmit} className="space-y-4 text-xs">
           <div className="grid grid-cols-2 gap-3">
@@ -926,7 +960,7 @@ export const TeamsPlayersView = ({
         isOpen={createPlayerModalOpen}
         onClose={() => setCreatePlayerModalOpen(false)}
         title="Add Player Profile"
-        subtitle={`Register player into ${tournament?.name}`}
+        subtitle={`Register player into ${tournament?.name || 'Tournament Edition'}`}
         maxWidth="xl"
       >
         <form onSubmit={handleCreatePlayerSubmit} className="space-y-4 text-xs">

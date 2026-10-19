@@ -35,8 +35,12 @@ export const SponsorshipView = ({
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreateModalOpen(false);
+      return;
+    }
     onCreateSponsor({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       name: form.name.trim(),
       contactNumber: form.contactNumber.trim(),
       contactEmail: form.contactEmail?.trim() || '',
@@ -48,6 +52,20 @@ export const SponsorshipView = ({
   };
 
   const totalCommitted = sponsors.reduce((acc, s) => acc + (s.contributionAmount || 0), 0);
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          🤝
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Sponsorship packages and partner rosters belong to an active tournament edition. Select or initialize a tournament edition to manage sponsors.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 min-w-0">

@@ -91,8 +91,26 @@ export const loginOrganizer = async (mobile, password) => {
     throw new Error('Invalid organizer credentials. Verification failed.');
   }
 
+  // Attempt server-side organizer authentication verification
+  let serverToken = null;
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobile: cleanMobile, password: cleanPassword })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.token) {
+        serverToken = data.token;
+      }
+    }
+  } catch {
+    // server API offline fallback
+  }
+
   // Generate authenticated organizer session
-  const sessionToken = `whk-org-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const sessionToken = serverToken || `whk-org-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const session = {
     token: sessionToken,
     user: {

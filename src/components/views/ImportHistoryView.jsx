@@ -77,14 +77,14 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
 
     if (activeImportType === 'cricheroes') {
       const matchRows = parsedPreview.map((row) => ({
-        tournamentId: tournament.id,
+        tournamentId: tournament?.id || '',
         matchNumber: parseInt(row.MatchNumber, 10) || 99,
         round: row.Round || 'Group Stage',
         teamAId: 'team-titans',
         teamBId: 'team-strikers',
         date: row.Date || '2026-10-20',
         time: row.Time || '19:30',
-        venue: row.Venue || tournament.venue,
+        venue: row.Venue || tournament?.venue || 'Stadium Ground',
         status: row.ResultSummary ? 'completed' : 'scheduled',
         teamAScore: row.TeamAScore,
         teamAOvers: parseFloat(row.TeamAOvers) || 20.0,
@@ -98,7 +98,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
       onImportMatches(matchRows, fileName || 'cricheroes_import.csv');
     } else {
       const playerRows = parsedPreview.map((row) => ({
-        tournamentId: tournament.id,
+        tournamentId: tournament?.id || '',
         name: row.PlayerName || 'Unknown Player',
         jerseyNumber: Math.floor(Math.random() * 99) + 1,
         role: row.Role || 'All-Rounder',
@@ -111,7 +111,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
         isOverseas: false,
         email: row.Email || `${(row.PlayerName || 'player').toLowerCase().replace(/\s+/g, '.')}@cricket.in`,
         phone: row.Phone || '+91 98000 00000',
-        city: row.City || tournament.city,
+        city: row.City || tournament?.city || 'Mumbai',
         shirtSize: row.ShirtSize || 'L',
         foodPreference: row.DietPreference || 'Veg',
         runsScored: 0,
@@ -167,7 +167,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
         <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-slate-900 truncate">Import History & Audit Log</h3>
-            <p className="text-[11px] sm:text-xs text-slate-500 truncate">Record of executed batch import jobs for {tournament.name}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 truncate">Record of executed batch import jobs for {tournament?.name || 'Tournament Edition'}</p>
           </div>
           <span className="text-xs font-mono font-semibold text-slate-500 shrink-0">
             {importJobs.length} jobs
@@ -279,7 +279,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title="Spreadsheet Import & Column Validator"
-        subtitle={`Ingesting records directly into ${tournament.name}`}
+        subtitle={`Ingesting records directly into ${tournament?.name || 'Tournament Edition'}`}
         maxWidth="2xl"
       >
         <div className="space-y-4 text-xs">
@@ -361,7 +361,7 @@ T Natarajan,Bowler,Left-hand bat,Left-arm fast,500000,Veg,XL,Salem,natarajan@cri
                 0 duplicates
               </span>
               <span className="flex items-center gap-1 text-slate-500 font-mono">
-                Partition: {tournament.id}
+                Partition: {tournament?.id || 'Global'}
               </span>
             </div>
           </div>

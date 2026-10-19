@@ -40,8 +40,12 @@ export const ExpensesView = ({
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreateModalOpen(false);
+      return;
+    }
     onCreateExpense({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       title: form.title,
       category: form.category,
       amount: form.amount,
@@ -66,7 +70,7 @@ export const ExpensesView = ({
       PaymentStatus: e.paymentStatus,
       Notes: e.notes || ''
     }));
-    exportToCsv(`${tournament.name.replace(/\s+/g, '_')}_Expense_Ledger`, rows);
+    exportToCsv(`${(tournament?.name || 'Tournament').replace(/\s+/g, '_')}_Expense_Ledger`, rows);
   };
 
   const totalExpenseSum = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -90,6 +94,20 @@ export const ExpensesView = ({
     }
     return true;
   });
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          💰
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Tournament expenses and financial ledgers belong to an active tournament edition. Select or initialize a tournament edition to manage expense vouchers.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">
@@ -370,7 +388,7 @@ export const ExpensesView = ({
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Record Tournament Expense Voucher"
-        subtitle={`Disbursement ledger entry for ${tournament.name}`}
+        subtitle={`Disbursement ledger entry for ${tournament?.name || 'Tournament Edition'}`}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

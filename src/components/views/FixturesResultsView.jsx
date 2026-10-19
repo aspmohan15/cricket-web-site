@@ -23,7 +23,8 @@ export const FixturesResultsView = ({
   onCreateMatch,
   onUpdateMatch,
   onDeleteMatch,
-  onOpenImport
+  onOpenImport,
+  onNavigateToEditions
 }) => {
   const isOrganizer = currentUser?.role === 'organizer';
   const [filterStatus, setFilterStatus] = useState('all');
@@ -44,12 +45,16 @@ export const FixturesResultsView = ({
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    if (!tournament?.id) {
+      setCreateModalOpen(false);
+      onNavigateToEditions?.();
+      return;
+    }
     if (matchForm.teamAId === matchForm.teamBId) {
-      alert('Team A and Team B cannot be the same!');
       return;
     }
     onCreateMatch({
-      tournamentId: tournament.id,
+      tournamentId: tournament?.id || '',
       matchNumber: matchForm.matchNumber,
       round: matchForm.round,
       teamAId: matchForm.teamAId,
@@ -75,6 +80,29 @@ export const FixturesResultsView = ({
     if (filterStatus !== 'all' && m.status !== filterStatus) return false;
     return true;
   });
+
+  if (!tournament) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 font-bold shadow-xs">
+          📅
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1.5">No Active Tournament Edition</h2>
+        <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          Match fixtures and live scorecards belong to a specific tournament edition. Create your first edition in the <strong>Tournament Editions</strong> module to schedule matches and record scorecards.
+        </p>
+        {isOrganizer && (
+          <button
+            type="button"
+            onClick={onNavigateToEditions}
+            className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+          >
+            Create Tournament Edition
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
