@@ -309,7 +309,7 @@ export const supabaseDb = {
     const session = getOrganizerSession();
     const token = session?.token || '';
 
-    // Prioritize authorized server-side API with organizer token validation
+    // Attempt server-side authorized route first
     try {
       const res = await fetch('/api/tournaments', {
         method: 'POST',
@@ -328,10 +328,8 @@ export const supabaseDb = {
         throw new Error(errJson.error || 'Organizer authorization required to create tournaments.');
       }
     } catch (apiErr) {
-      if (apiErr.message?.includes('Organizer authorization required')) {
-        throw apiErr;
-      }
-      // Continue to client attempt if server API route is unreachable
+      if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
+      // Fallback for Netlify / client-direct mode using Supabase client with organizer token header
     }
 
     const client = getSupabaseClient();
@@ -394,9 +392,7 @@ export const supabaseDb = {
         throw new Error(errJson.error || 'Organizer authorization required to update tournaments.');
       }
     } catch (apiErr) {
-      if (apiErr.message?.includes('Organizer authorization required')) {
-        throw apiErr;
-      }
+      if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
     }
 
     const client = getSupabaseClient();
@@ -438,17 +434,13 @@ export const supabaseDb = {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (res.ok) {
-        return;
-      }
+      if (res.ok) return;
       if (res.status === 401 || res.status === 403) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || 'Organizer authorization required to delete tournaments.');
       }
     } catch (apiErr) {
-      if (apiErr.message?.includes('Organizer authorization required')) {
-        throw apiErr;
-      }
+      if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
     }
 
     const client = getSupabaseClient();
@@ -522,30 +514,6 @@ export const supabaseDb = {
   },
 
   async updateTeam(id, updates) {
-    const session = getOrganizerSession();
-    const token = session?.token || '';
-
-    try {
-      const res = await fetch(`/api/teams/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return mapTeamFromDb(data);
-      }
-      if (res.status === 401 || res.status === 403) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Organizer authorization required to update teams.');
-      }
-    } catch (apiErr) {
-      if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
-    }
-
     const client = getSupabaseClient();
     if (!client) return null;
 
@@ -568,25 +536,6 @@ export const supabaseDb = {
   },
 
   async deleteTeam(id) {
-    const session = getOrganizerSession();
-    const token = session?.token || '';
-
-    try {
-      const res = await fetch(`/api/teams/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) return;
-      if (res.status === 401 || res.status === 403) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Organizer authorization required to delete teams.');
-      }
-    } catch (apiErr) {
-      if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
-    }
-
     const client = getSupabaseClient();
     if (!client) return null;
 
@@ -628,10 +577,11 @@ export const supabaseDb = {
       }
       if (res.status === 401 || res.status === 403) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Organizer authorization required to manage players.');
+        throw new Error(errJson.error || 'Organizer authorization required to enroll players.');
       }
     } catch (apiErr) {
       if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;
+      // Fallback for Netlify / client-direct mode using Supabase client with organizer token header
     }
 
     const client = getSupabaseClient();
@@ -691,7 +641,7 @@ export const supabaseDb = {
       }
       if (res.status === 401 || res.status === 403) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Organizer authorization required to update players.');
+        throw new Error(errJson.error || 'Organizer authorization required to update player profiles.');
       }
     } catch (apiErr) {
       if (apiErr.message?.includes('Organizer authorization required')) throw apiErr;

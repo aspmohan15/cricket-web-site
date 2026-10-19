@@ -87,7 +87,7 @@ const requireOrganizer = (req: Request, res: Response, next: NextFunction) => {
 // ==============================================================================
 // 1. ORGANIZER AUTHENTICATION ENDPOINTS
 // ==============================================================================
-app.post('/api/auth/login', (req: Request, res: Response) => {
+app.post('/api/auth/login', async (req: Request, res: Response) => {
   const { mobile, password } = req.body;
   const cleanMobile = normalizeMobile(mobile);
   const targetMobile = normalizeMobile(DEFAULT_ORGANIZER_MOBILE);
@@ -100,6 +100,19 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   }
 
   const token = signOrganizerToken(cleanMobile);
+
+  // Synchronize session token with PostgreSQL organizer_sessions for direct Supabase RLS compatibility
+  try {
+    await pool.query(
+      `INSERT INTO public.organizer_sessions (token, mobile, created_at, expires_at)
+       VALUES ($1, $2, timezone('utc'::text, now()), timezone('utc'::text, now()) + interval '7 days')
+       ON CONFLICT (token) DO UPDATE SET expires_at = timezone('utc'::text, now()) + interval '7 days';`,
+      [token, DEFAULT_ORGANIZER_MOBILE]
+    );
+  } catch (err: any) {
+    console.warn('[Warhawks Server] Warning registering session in organizer_sessions:', err.message);
+  }
+
   return res.json({
     token,
     user: {
@@ -111,6 +124,17 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
       title: 'Official Tournament Organizer & Host'
     }
   });
+});
+
+app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (req.headers['x-organizer-token'] as string);
+  if (token) {
+    try {
+      await pool.query('DELETE FROM public.organizer_sessions WHERE token = $1;', [token]);
+    } catch {}
+  }
+  return res.json({ success: true });
 });
 
 app.get('/api/auth/verify', (req: Request, res: Response) => {

@@ -106,11 +106,49 @@ export const loginOrganizer = async (mobile, password) => {
       }
     }
   } catch {
-    // server API offline fallback
+    // server API offline fallback (e.g. on Netlify or static host)
+  }
+
+  // If server endpoint was not reachable (e.g., Netlify hosting), authenticate directly via Supabase RPC
+  if (!serverToken) {
+    try {
+      const rawCfg = localStorage.getItem('warhawks_supabase_config_v1');
+      let url = import.meta.env.VITE_SUPABASE_URL || '';
+      let anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      if (rawCfg) {
+        try {
+          const parsed = JSON.parse(rawCfg);
+          if (parsed.url && parsed.anonKey) {
+            url = parsed.url;
+            anonKey = parsed.anonKey;
+          }
+        } catch {}
+      }
+
+      if (url && anonKey && !url.includes('[YOUR-PROJECT-REF]')) {
+        const rpcRes = await fetch(`${url}/rest/v1/rpc/authenticate_organizer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': `Bearer ${anonKey}`
+          },
+          body: JSON.stringify({ p_mobile: cleanMobile, p_password: cleanPassword })
+        });
+        if (rpcRes.ok) {
+          const rpcData = await rpcRes.json();
+          if (rpcData?.success && rpcData?.token) {
+            serverToken = rpcData.token;
+          }
+        }
+      }
+    } catch (sbErr) {
+      console.warn('Supabase organizer authentication RPC notice:', sbErr);
+    }
   }
 
   // Generate authenticated organizer session
-  const sessionToken = serverToken || `whk-org-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const sessionToken = serverToken || `whk-org-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const session = {
     token: sessionToken,
     user: {
@@ -160,10 +198,50 @@ export const getOrganizerSession = () => {
  * Destroys the Organizer session on logout
  */
 export const logoutOrganizer = () => {
+  const session = getOrganizerSession();
+  const token = session?.token;
   try {
     localStorage.removeItem(ORGANIZER_SESSION_KEY);
   } catch {
     // ignore
+  }
+
+  if (token) {
+    try {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }).catch(() => {});
+    } catch {}
+
+    try {
+      const rawCfg = localStorage.getItem('warhawks_supabase_config_v1');
+      let url = import.meta.env.VITE_SUPABASE_URL || '';
+      let anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      if (rawCfg) {
+        try {
+          const parsed = JSON.parse(rawCfg);
+          if (parsed.url && parsed.anonKey) {
+            url = parsed.url;
+            anonKey = parsed.anonKey;
+          }
+        } catch {}
+      }
+      if (url && anonKey) {
+        fetch(`${url}/rest/v1/rpc/logout_organizer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': `Bearer ${anonKey}`
+          },
+          body: JSON.stringify({ p_token: token })
+        }).catch(() => {});
+      }
+    } catch {}
   }
   return true;
 };

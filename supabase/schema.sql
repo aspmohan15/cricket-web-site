@@ -108,22 +108,138 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Security Definer function to check if current user has organizer administrative authority
+-- 3b. ORGANIZER SESSIONS (Direct / Headless / Netlify administrative authentication)
+CREATE TABLE IF NOT EXISTS public.organizer_sessions (
+  token TEXT PRIMARY KEY,
+  mobile TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()) + interval '7 days'
+);
+
+ALTER TABLE public.organizer_sessions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read organizer_sessions" ON public.organizer_sessions;
+CREATE POLICY "Public read organizer_sessions"
+  ON public.organizer_sessions FOR SELECT
+  USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_organizer_sessions_token_exp ON public.organizer_sessions (token, expires_at);
+
+-- Security Definer function to check if current request has organizer administrative authority
 CREATE OR REPLACE FUNCTION public.is_organizer()
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_catalog, pg_temp
+AS $$
+DECLARE
+  v_headers JSON;
+  v_token TEXT;
 BEGIN
-  -- If user is signed in with a Supabase Auth session, verify their assigned role in user_profiles
+  -- 1. Check Supabase Auth JWT
   IF auth.uid() IS NOT NULL THEN
-    RETURN EXISTS (
+    IF EXISTS (
       SELECT 1 FROM public.user_profiles
       WHERE id = auth.uid() AND role = 'organizer'
-    );
+    ) THEN
+      RETURN true;
+    END IF;
   END IF;
 
-  -- Default to false for anonymous / unverified client requests (enforces strict RLS)
+  -- 2. Check x-organizer-token or Bearer in request.headers
+  BEGIN
+    v_headers := current_setting('request.headers', true)::json;
+    IF v_headers IS NOT NULL THEN
+      v_token := v_headers->>'x-organizer-token';
+      IF v_token IS NULL OR v_token = '' THEN
+        v_token := replace(v_headers->>'authorization', 'Bearer ', '');
+      END IF;
+      v_token := trim(v_token);
+
+      IF v_token IS NOT NULL AND v_token != '' THEN
+        IF EXISTS (
+          SELECT 1 FROM public.organizer_sessions
+          WHERE token = v_token AND expires_at > timezone('utc'::text, now())
+        ) THEN
+          RETURN true;
+        END IF;
+      END IF;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    -- Fall through safely
+  END;
+
   RETURN false;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$;
+
+-- Security Definer RPC for Organizer Authentication
+CREATE OR REPLACE FUNCTION public.authenticate_organizer(p_mobile text, p_password text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, pg_catalog, pg_temp
+AS $$
+DECLARE
+  v_target_mobile text := '+919820012345';
+  v_clean_input text;
+  v_token text;
+BEGIN
+  v_clean_input := regexp_replace(COALESCE(p_mobile, ''), '[^0-9+]', '', 'g');
+  IF v_clean_input ~ '^[6-9][0-9]{9}$' THEN
+    v_clean_input := '+91' || v_clean_input;
+  ELSIF v_clean_input ~ '^91[6-9][0-9]{9}$' THEN
+    v_clean_input := '+' || v_clean_input;
+  END IF;
+
+  IF (v_clean_input = v_target_mobile OR v_clean_input = '9820012345') AND trim(COALESCE(p_password, '')) = 'warhawks2026' THEN
+    v_token := 'whk-org-' || replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+
+    INSERT INTO public.organizer_sessions (token, mobile, created_at, expires_at)
+    VALUES (v_token, '+91 98200 12345', timezone('utc'::text, now()), timezone('utc'::text, now()) + interval '7 days')
+    ON CONFLICT (token) DO UPDATE SET expires_at = timezone('utc'::text, now()) + interval '7 days';
+
+    RETURN jsonb_build_object(
+      'success', true,
+      'token', v_token,
+      'user', jsonb_build_object(
+        'id', 'usr-organizer-01',
+        'name', 'Warhawks Tournament Operations',
+        'email', 'operations@warhawks.org',
+        'mobile', '+91 98200 12345',
+        'role', 'organizer',
+        'title', 'Official Tournament Organizer & Host'
+      )
+    );
+  ELSE
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Invalid organizer credentials.'
+    );
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.authenticate_organizer(text, text) TO anon, authenticated, service_role;
+
+-- Logout RPC
+CREATE OR REPLACE FUNCTION public.logout_organizer(p_token text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog, pg_temp
+AS $$
+BEGIN
+  IF p_token IS NOT NULL AND p_token != '' THEN
+    DELETE FROM public.organizer_sessions WHERE token = p_token;
+    RETURN true;
+  END IF;
+  RETURN false;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.logout_organizer(text) TO anon, authenticated, service_role;
 
 -- ------------------------------------------------------------------------------
 -- 4. TOURNAMENTS TABLE

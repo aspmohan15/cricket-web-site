@@ -1,6 +1,5 @@
-// Supabase Client Architecture for Warhawks Tournament Management
 import { createClient } from '@supabase/supabase-js';
-import { isOrganizerAuthenticated } from './auth';
+import { isOrganizerAuthenticated, getOrganizerSession } from './auth';
 
 const STORAGE_SETTINGS_KEY = 'warhawks_supabase_config_v1';
 
@@ -43,15 +42,24 @@ export const getSupabaseClient = () => {
     return null;
   }
 
-  if (!supabaseInstance) {
+  const session = typeof getOrganizerSession === 'function' ? getOrganizerSession() : null;
+  const currentToken = session?.token || '';
+
+  // Ensure client instance uses active organizer session token header
+  if (!supabaseInstance || supabaseInstance._whkToken !== currentToken) {
     try {
+      const headers = currentToken ? { 'x-organizer-token': currentToken } : {};
       supabaseInstance = createClient(activeConfig.url, activeConfig.anonKey, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true
+        },
+        global: {
+          headers
         }
       });
+      supabaseInstance._whkToken = currentToken;
     } catch (err) {
       console.warn('Supabase client initialization warning:', err.message);
       return null;
