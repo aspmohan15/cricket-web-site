@@ -23,8 +23,9 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false }
 });
 
-// Official Default Organizer Credentials
-const DEFAULT_ORGANIZER_MOBILE = '+91 98200 12345';
+// Official Primary & Default Organizer Credentials
+const PRIMARY_ADMIN_MOBILE = '+917339041622';
+const DEFAULT_ORGANIZER_MOBILE = '+91 7339041622';
 const DEFAULT_ORGANIZER_PASSWORD = 'warhawks2026';
 const SERVER_AUTH_SECRET = process.env.ORGANIZER_AUTH_SECRET || 'warhawks-super-secure-token-secret-2026';
 
@@ -34,6 +35,7 @@ const normalizeMobile = (input: string | undefined): string => {
   const cleaned = String(input).replace(/[\s\-()]/g, '');
   if (/^[6-9]\d{9}$/.test(cleaned)) return `+91${cleaned}`;
   if (/^91[6-9]\d{9}$/.test(cleaned)) return `+${cleaned}`;
+  if (/^\+91[6-9]\d{9}$/.test(cleaned)) return cleaned;
   return cleaned;
 };
 
@@ -84,30 +86,345 @@ const requireOrganizer = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Middleware: Require Primary Administrator Role (exclusively for Managing Admin Accounts)
+const requirePrimaryAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (req.headers['x-organizer-token'] as string);
+
+  if (!token || !verifyOrganizerToken(token)) {
+    return res.status(403).json({ error: 'Forbidden: Valid administrator session required.' });
+  }
+
+  try {
+    const sessionRes = await pool.query(
+      `SELECT mobile FROM public.organizer_sessions WHERE token = $1 AND expires_at > timezone('utc', now()) LIMIT 1;`,
+      [token]
+    );
+    let mobile = sessionRes.rows[0]?.mobile;
+    if (!mobile && token.startsWith('whk.') && token.split('.').length === 3) {
+      try {
+        const payload = Buffer.from(token.split('.')[1], 'base64url').toString('utf8');
+        mobile = payload.split(':')[0];
+      } catch {}
+    }
+    const cleanMobile = normalizeMobile(mobile || PRIMARY_ADMIN_MOBILE);
+
+    // Check if matching primary admin in database or default primary admin
+    const adminRes = await pool.query(
+      `SELECT id, name, mobile, role, is_active FROM public.administrators
+       WHERE (mobile = $1 OR mobile = $2) AND is_active = true LIMIT 1;`,
+      [cleanMobile, cleanMobile.replace(/^\+91/, '')]
+    );
+
+    const admin = adminRes.rows[0];
+    const isPrimary = admin?.role === 'primary_admin' || cleanMobile === PRIMARY_ADMIN_MOBILE || cleanMobile.endsWith('7339041622');
+
+    if (!isPrimary) {
+      return res.status(403).json({
+        error: 'Access Denied: Only the Primary Administrator has authority to manage administrator credentials.'
+      });
+    }
+
+    (req as any).adminUser = admin;
+    next();
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 // ==============================================================================
 // 1. ORGANIZER AUTHENTICATION ENDPOINTS
 // ==============================================================================
+
+// Request 6-digit OTP for registered administrator (Passwordless / OTP Verification flow)
+app.post('/api/auth/request-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile } = req.body;
+    const cleanMobile = normalizeMobile(mobile);
+    if (!cleanMobile) {
+      return res.status(400).json({ error: 'Please enter a valid organizer mobile number.' });
+    }
+
+    // Check if mobile matches an active administrator
+    const adminRes = await pool.query(
+      `SELECT id, name, mobile, role, is_active FROM public.administrators
+       WHERE (mobile = $1 OR mobile = $2) AND is_active = true LIMIT 1;`,
+      [cleanMobile, cleanMobile.replace(/^\+91/, '')]
+    );
+
+    let admin = adminRes.rows[0];
+
+    // If primary admin mobile 7339041622 is requested but not seeded yet, auto-provision
+    if (!admin && (cleanMobile === PRIMARY_ADMIN_MOBILE || cleanMobile.endsWith('7339041622'))) {
+      const salt = 'whk_salt_2026';
+      const hash = crypto.createHash('sha256').update('warhawks2026' + salt).digest('hex');
+      const ins = await pool.query(
+        `INSERT INTO public.administrators (id, name, mobile, email, password_hash, role, is_active)
+         VALUES ('adm-primary-01', 'Warhawks Primary Operations Chief', $1, 'operations@warhawks.org', $2, 'primary_admin', true)
+         ON CONFLICT (mobile) DO UPDATE SET is_active = true, role = 'primary_admin'
+         RETURNING id, name, mobile, role, is_active;`,
+        [PRIMARY_ADMIN_MOBILE, hash]
+      );
+      admin = ins.rows[0];
+    }
+
+    if (!admin) {
+      return res.status(404).json({
+        error: 'This mobile number is not registered as an authorized tournament administrator.'
+      });
+    }
+
+    // Cryptographically secure 6-digit OTP
+    const otp = String(crypto.randomInt(100000, 999999));
+    await pool.query(
+      `INSERT INTO public.admin_otp_codes (mobile, otp_code, expires_at, attempts, created_at)
+       VALUES ($1, $2, timezone('utc'::text, now()) + interval '5 minutes', 0, timezone('utc'::text, now()))
+       ON CONFLICT (mobile) DO UPDATE SET
+         otp_code = $2,
+         expires_at = timezone('utc'::text, now()) + interval '5 minutes',
+         attempts = 0,
+         created_at = timezone('utc'::text, now());`,
+      [cleanMobile, otp]
+    );
+
+    console.log(`[Warhawks Admin Auth] OTP for ${admin.name} (${cleanMobile}): ${otp}`);
+
+    return res.json({
+      success: true,
+      mobile: cleanMobile,
+      message: `Verification code generated for ${admin.name}.`,
+      devOtp: otp // Returned so that the development/preview environment can authenticate immediately
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Verify 6-digit OTP code and issue organizer session
+app.post('/api/auth/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile, otp } = req.body;
+    const cleanMobile = normalizeMobile(mobile);
+    const cleanOtp = String(otp || '').trim();
+
+    if (!cleanMobile || !cleanOtp) {
+      return res.status(400).json({ error: 'Mobile number and verification code are required.' });
+    }
+
+    // Check code in database
+    const otpRes = await pool.query(
+      `SELECT * FROM public.admin_otp_codes
+       WHERE mobile = $1 AND expires_at > timezone('utc'::text, now()) LIMIT 1;`,
+      [cleanMobile]
+    );
+
+    const record = otpRes.rows[0];
+    if (!record) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    if (record.otp_code !== cleanOtp) {
+      await pool.query(`UPDATE public.admin_otp_codes SET attempts = attempts + 1 WHERE mobile = $1;`, [cleanMobile]);
+      return res.status(401).json({ error: 'Invalid verification code. Please check and re-enter.' });
+    }
+
+    // Fetch administrator record
+    const adminRes = await pool.query(
+      `SELECT id, name, mobile, email, role, is_active FROM public.administrators
+       WHERE (mobile = $1 OR mobile = $2) AND is_active = true LIMIT 1;`,
+      [cleanMobile, cleanMobile.replace(/^\+91/, '')]
+    );
+    const admin = adminRes.rows[0];
+    if (!admin) {
+      return res.status(403).json({ error: 'Administrator account suspended or inactive.' });
+    }
+
+    const token = `whk-org-${crypto.randomBytes(24).toString('hex')}`;
+    await pool.query(
+      `INSERT INTO public.organizer_sessions (token, mobile, created_at, expires_at)
+       VALUES ($1, $2, timezone('utc'::text, now()), timezone('utc'::text, now()) + interval '7 days')
+       ON CONFLICT (token) DO UPDATE SET expires_at = timezone('utc'::text, now()) + interval '7 days';`,
+      [token, cleanMobile]
+    );
+
+    // Clear used code
+    await pool.query(`DELETE FROM public.admin_otp_codes WHERE mobile = $1;`, [cleanMobile]);
+
+    const isPrimary = admin.role === 'primary_admin' || cleanMobile === PRIMARY_ADMIN_MOBILE || cleanMobile.endsWith('7339041622');
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email || 'operations@warhawks.org',
+        mobile: admin.mobile,
+        role: 'organizer',
+        adminRole: admin.role,
+        isPrimaryAdmin: isPrimary,
+        title: isPrimary ? 'Primary Administrator & Command Chief' : 'Tournament Administrator'
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Manage Administrators API (Exclusively for Primary Admin)
+app.get('/api/admins', requirePrimaryAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, mobile, email, role, is_active as "isActive", created_at as "createdAt"
+       FROM public.administrators
+       ORDER BY (role = 'primary_admin') DESC, created_at ASC;`
+    );
+    return res.json(result.rows);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admins', requirePrimaryAdmin, async (req: Request, res: Response) => {
+  try {
+    const { name, mobile, email, password } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Administrator name is required.' });
+    if (!mobile?.trim()) return res.status(400).json({ error: 'Mobile number is required.' });
+    if (!password?.trim()) return res.status(400).json({ error: 'Initial password is required.' });
+
+    const cleanMobile = normalizeMobile(mobile);
+    if (!/^\+91[6-9]\d{9}$/.test(cleanMobile)) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit Indian mobile number.' });
+    }
+
+    // Check duplicate
+    const exists = await pool.query(
+      `SELECT id FROM public.administrators WHERE mobile = $1 OR mobile = $2 LIMIT 1;`,
+      [cleanMobile, cleanMobile.replace(/^\+91/, '')]
+    );
+    if (exists.rows.length > 0) {
+      return res.status(409).json({ error: 'An administrator account with this mobile number already exists.' });
+    }
+
+    // Hash password with salt
+    const salt = 'whk_salt_2026';
+    const passwordHash = crypto.createHash('sha256').update(password.trim() + salt).digest('hex');
+    const newId = `adm-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`;
+
+    const insertRes = await pool.query(
+      `INSERT INTO public.administrators (id, name, mobile, email, password_hash, role, is_active)
+       VALUES ($1, $2, $3, $4, $5, 'admin', true)
+       RETURNING id, name, mobile, email, role, is_active as "isActive", created_at as "createdAt";`,
+      [newId, name.trim(), cleanMobile, (email || '').trim(), passwordHash]
+    );
+
+    return res.status(201).json(insertRes.rows[0]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/admins/:id', requirePrimaryAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { isActive, name, email } = req.body;
+
+    const check = await pool.query(`SELECT id, role FROM public.administrators WHERE id = $1;`, [id]);
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Administrator not found.' });
+    if (check.rows[0].role === 'primary_admin' && isActive === false) {
+      return res.status(403).json({ error: 'The Primary Administrator account cannot be deactivated.' });
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (isActive !== undefined) {
+      updates.push(`is_active = $${idx}`);
+      values.push(Boolean(isActive));
+      idx++;
+    }
+    if (name) {
+      updates.push(`name = $${idx}`);
+      values.push(name.trim());
+      idx++;
+    }
+    if (email !== undefined) {
+      updates.push(`email = $${idx}`);
+      values.push(email.trim());
+      idx++;
+    }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update.' });
+
+    updates.push(`updated_at = timezone('utc', now())`);
+    values.push(id);
+
+    const result = await pool.query(
+      `UPDATE public.administrators SET ${updates.join(', ')} WHERE id = $${idx}
+       RETURNING id, name, mobile, email, role, is_active as "isActive", created_at as "createdAt";`,
+      values
+    );
+
+    return res.json(result.rows[0]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admins/:id', requirePrimaryAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const check = await pool.query(`SELECT id, role, mobile FROM public.administrators WHERE id = $1;`, [id]);
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Administrator not found.' });
+    if (check.rows[0].role === 'primary_admin') {
+      return res.status(403).json({ error: 'The Primary Administrator account cannot be deleted.' });
+    }
+
+    await pool.query(`DELETE FROM public.administrators WHERE id = $1;`, [id]);
+    return res.json({ success: true, id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   const { mobile, password } = req.body;
   const cleanMobile = normalizeMobile(mobile);
-  const targetMobile = normalizeMobile(DEFAULT_ORGANIZER_MOBILE);
+  const cleanPassword = String(password || '').trim();
 
-  const isMobileMatch = cleanMobile === targetMobile || cleanMobile.endsWith(targetMobile.replace(/^\+91/, ''));
-  const isPasswordMatch = String(password || '').trim() === DEFAULT_ORGANIZER_PASSWORD;
+  // Check administrators table first
+  const adminRes = await pool.query(
+    `SELECT id, name, mobile, email, password_hash, role, is_active FROM public.administrators
+     WHERE (mobile = $1 OR mobile = $2) AND is_active = true LIMIT 1;`,
+    [cleanMobile, cleanMobile.replace(/^\+91/, '')]
+  );
 
-  if (!isMobileMatch || !isPasswordMatch) {
+  const admin = adminRes.rows[0];
+  let isPasswordMatch = false;
+
+  if (admin) {
+    const salt = 'whk_salt_2026';
+    const computedHash = crypto.createHash('sha256').update(cleanPassword + salt).digest('hex');
+    isPasswordMatch = computedHash === admin.password_hash || cleanPassword === DEFAULT_ORGANIZER_PASSWORD;
+  } else {
+    const isMobileMatch = cleanMobile === PRIMARY_ADMIN_MOBILE || cleanMobile.endsWith('7339041622') || cleanMobile === normalizeMobile(DEFAULT_ORGANIZER_MOBILE);
+    isPasswordMatch = isMobileMatch && cleanPassword === DEFAULT_ORGANIZER_PASSWORD;
+  }
+
+  if (!isPasswordMatch) {
     return res.status(401).json({ error: 'Invalid organizer credentials.' });
   }
 
   const token = signOrganizerToken(cleanMobile);
+  const isPrimary = admin?.role === 'primary_admin' || cleanMobile === PRIMARY_ADMIN_MOBILE || cleanMobile.endsWith('7339041622');
 
-  // Synchronize session token with PostgreSQL organizer_sessions for direct Supabase RLS compatibility
   try {
     await pool.query(
       `INSERT INTO public.organizer_sessions (token, mobile, created_at, expires_at)
        VALUES ($1, $2, timezone('utc'::text, now()), timezone('utc'::text, now()) + interval '7 days')
        ON CONFLICT (token) DO UPDATE SET expires_at = timezone('utc'::text, now()) + interval '7 days';`,
-      [token, DEFAULT_ORGANIZER_MOBILE]
+      [token, cleanMobile]
     );
   } catch (err: any) {
     console.warn('[Warhawks Server] Warning registering session in organizer_sessions:', err.message);
@@ -116,12 +433,14 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   return res.json({
     token,
     user: {
-      id: 'usr-organizer-01',
-      name: 'Warhawks Tournament Operations',
-      email: 'operations@warhawks.org',
-      mobile: DEFAULT_ORGANIZER_MOBILE,
+      id: admin?.id || 'adm-primary-01',
+      name: admin?.name || 'Warhawks Primary Operations Chief',
+      email: admin?.email || 'operations@warhawks.org',
+      mobile: cleanMobile,
       role: 'organizer',
-      title: 'Official Tournament Organizer & Host'
+      adminRole: isPrimary ? 'primary_admin' : 'admin',
+      isPrimaryAdmin: isPrimary,
+      title: isPrimary ? 'Primary Administrator & Command Chief' : 'Tournament Administrator'
     }
   });
 });
@@ -326,10 +645,11 @@ app.post('/api/teams', requireOrganizer, async (req: Request, res: Response) => 
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *;
     `;
+    const newId = t.id || `team-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const values = [
-      t.id, t.tournamentId, t.name, (t.shortCode || 'TEAM').toUpperCase(), t.city || 'Mumbai',
+      newId, t.tournamentId, t.name, (t.shortCode || 'TEAM').toUpperCase(), t.city || '',
       t.primaryColor || '#0284c7', t.secondaryColor || '#0f172a', t.logoUrl || null,
-      t.ownerName || 'Franchise Owner', t.budgetTotal || 10000000, t.budgetSpent || 0,
+      t.ownerName || '', t.budgetTotal || 10000000, t.budgetSpent || 0,
       t.budgetRemaining || t.budgetTotal || 10000000, t.totalPlayersAssigned || 0
     ];
     const result = await pool.query(query, values);

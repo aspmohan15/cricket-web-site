@@ -38,53 +38,73 @@ export const FoodPreferencesView = ({
     const playerHasBreakfast = Boolean(r.hasBreakfast);
     const playerHasLunch = Boolean(r.hasLunch);
     const guestCount = Math.max(0, parseInt(r.guestCount, 10) || 0);
-    const guestHasBreakfast = guestCount > 0 ? Boolean(r.hasGuestBreakfast) : false;
-    const guestHasLunch = guestCount > 0 ? Boolean(r.hasGuestLunch) : false;
 
-    // Count independent guest diets
     let guestVegCount = 0;
     let guestNonVegCount = 0;
+    let guestVegBreakfasts = 0;
+    let guestNonVegBreakfasts = 0;
+    let guestVegLunches = 0;
+    let guestNonVegLunches = 0;
+    let guestTotalBreakfasts = 0;
+    let guestTotalLunches = 0;
     let normalizedGuests = [];
 
     if (guestCount > 0) {
       if (Array.isArray(r.guests) && r.guests.length > 0) {
         normalizedGuests = r.guests.slice(0, guestCount).map((g, idx) => ({
           guestNumber: idx + 1,
-          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg'
+          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg',
+          hasBreakfast: g?.hasBreakfast !== undefined ? Boolean(g.hasBreakfast) : Boolean(r.hasGuestBreakfast),
+          hasLunch: g?.hasLunch !== undefined ? Boolean(g.hasLunch) : Boolean(r.hasGuestLunch)
         }));
         while (normalizedGuests.length < guestCount) {
-          normalizedGuests.push({ guestNumber: normalizedGuests.length + 1, dietaryPreference: 'Veg' });
+          normalizedGuests.push({
+            guestNumber: normalizedGuests.length + 1,
+            dietaryPreference: 'Veg',
+            hasBreakfast: false,
+            hasLunch: false
+          });
         }
       } else {
         const defaultDiet = (r.guestFoodPreference === 'Non-Veg' || r.guestFoodPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg';
         normalizedGuests = Array.from({ length: guestCount }, (_, i) => ({
           guestNumber: i + 1,
-          dietaryPreference: defaultDiet
+          dietaryPreference: defaultDiet,
+          hasBreakfast: Boolean(r.hasGuestBreakfast),
+          hasLunch: Boolean(r.hasGuestLunch)
         }));
       }
 
       normalizedGuests.forEach(g => {
         if (g.dietaryPreference === 'Non-Veg') guestNonVegCount += 1;
         else guestVegCount += 1;
+
+        if (g.hasBreakfast) {
+          guestTotalBreakfasts += 1;
+          if (g.dietaryPreference === 'Non-Veg') guestNonVegBreakfasts += 1;
+          else guestVegBreakfasts += 1;
+        }
+
+        if (g.hasLunch) {
+          guestTotalLunches += 1;
+          if (g.dietaryPreference === 'Non-Veg') guestNonVegLunches += 1;
+          else guestVegLunches += 1;
+        }
       });
     }
 
-    const totalBreakfasts = (playerHasBreakfast ? 1 : 0) + (guestHasBreakfast ? guestCount : 0);
-    const totalLunches = (playerHasLunch ? 1 : 0) + (guestHasLunch ? guestCount : 0);
+    const totalBreakfasts = (playerHasBreakfast ? 1 : 0) + guestTotalBreakfasts;
+    const totalLunches = (playerHasLunch ? 1 : 0) + guestTotalLunches;
 
     const vegBreakfasts =
-      (playerHasBreakfast && playerDiet === 'Veg' ? 1 : 0) +
-      (guestHasBreakfast ? guestVegCount : 0);
+      (playerHasBreakfast && playerDiet === 'Veg' ? 1 : 0) + guestVegBreakfasts;
     const nonVegBreakfasts =
-      (playerHasBreakfast && playerDiet === 'Non-Veg' ? 1 : 0) +
-      (guestHasBreakfast ? guestNonVegCount : 0);
+      (playerHasBreakfast && playerDiet === 'Non-Veg' ? 1 : 0) + guestNonVegBreakfasts;
 
     const vegLunches =
-      (playerHasLunch && playerDiet === 'Veg' ? 1 : 0) +
-      (guestHasLunch ? guestVegCount : 0);
+      (playerHasLunch && playerDiet === 'Veg' ? 1 : 0) + guestVegLunches;
     const nonVegLunches =
-      (playerHasLunch && playerDiet === 'Non-Veg' ? 1 : 0) +
-      (guestHasLunch ? guestNonVegCount : 0);
+      (playerHasLunch && playerDiet === 'Non-Veg' ? 1 : 0) + guestNonVegLunches;
 
     const totalHeadcount = 1 + guestCount;
     const cateringStatus = r.cateringStatus || 'confirmed';
@@ -106,8 +126,10 @@ export const FoodPreferencesView = ({
       guestVegCount,
       guestNonVegCount,
       guestDiet: guestNonVegCount > 0 ? (guestVegCount > 0 ? 'Mixed' : 'Non-Veg') : 'Veg',
-      guestHasBreakfast,
-      guestHasLunch,
+      guestHasBreakfast: guestTotalBreakfasts > 0,
+      guestHasLunch: guestTotalLunches > 0,
+      guestTotalBreakfasts,
+      guestTotalLunches,
       totalBreakfasts,
       totalLunches,
       totalMeals: totalBreakfasts + totalLunches,
@@ -198,8 +220,11 @@ export const FoodPreferencesView = ({
       'Athlete Lunch': r.playerHasLunch ? 'Yes' : 'No',
       'Guest Count': r.guestCount,
       'Guest Diet': r.guestCount > 0 ? r.guestDiet : 'N/A',
-      'Guest Breakfast': r.guestCount > 0 ? (r.guestHasBreakfast ? 'Yes' : 'No') : 'N/A',
-      'Guest Lunch': r.guestCount > 0 ? (r.guestHasLunch ? 'Yes' : 'No') : 'N/A',
+      'Guest Breakfasts': r.guestCount > 0 ? r.guestTotalBreakfasts : 0,
+      'Guest Lunches': r.guestCount > 0 ? r.guestTotalLunches : 0,
+      'Guest Details': r.guestCount > 0 && Array.isArray(r.guests)
+        ? r.guests.map(g => `Guest #${g.guestNumber}: ${g.dietaryPreference} [${[g.hasBreakfast ? 'Breakfast' : null, g.hasLunch ? 'Lunch' : null].filter(Boolean).join(', ') || 'No Meals'}]`).join('; ')
+        : 'None',
       'Total Breakfasts': r.totalBreakfasts,
       'Total Lunches': r.totalLunches,
       'Total Combined Meals': r.totalMeals,
@@ -216,15 +241,19 @@ export const FoodPreferencesView = ({
   const handleSaveEditModal = (e) => {
     e.preventDefault();
     if (!editingRegistration) return;
+    const guests = editingRegistration.guests || [];
+    const hasAnyBreakfast = guests.some(g => g.hasBreakfast);
+    const hasAnyLunch = guests.some(g => g.hasLunch);
+
     onUpdateRegistrationDetails?.(editingRegistration.registrationId, {
       foodPreference: editingRegistration.playerDiet,
       hasBreakfast: editingRegistration.playerHasBreakfast,
       hasLunch: editingRegistration.playerHasLunch,
       guestCount: editingRegistration.guestCount,
-      guests: editingRegistration.guests || [],
-      guestFoodPreference: editingRegistration.guestDiet === 'Non-Veg' ? 'Non-Veg' : 'Veg',
-      hasGuestBreakfast: editingRegistration.hasGuestBreakfast,
-      hasGuestLunch: editingRegistration.hasGuestLunch,
+      guests,
+      guestFoodPreference: guests[0]?.dietaryPreference || 'Veg',
+      hasGuestBreakfast: hasAnyBreakfast,
+      hasGuestLunch: hasAnyLunch,
       cateringStatus: editingRegistration.cateringStatus
     });
     setEditingRegistration(null);
@@ -725,87 +754,116 @@ export const FoodPreferencesView = ({
                 <span>Accompanying Guests & Dietary Options</span>
               </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Guest Number</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={20}
-                    value={editingRegistration.guestCount}
-                    onChange={e => {
-                      const count = Math.max(0, parseInt(e.target.value, 10) || 0);
-                      let updatedGuests = [...(editingRegistration.guests || [])];
-                      if (count > updatedGuests.length) {
-                        for (let i = updatedGuests.length; i < count; i++) {
-                          updatedGuests.push({ guestNumber: i + 1, dietaryPreference: 'Veg' });
-                        }
-                      } else if (count < updatedGuests.length) {
-                        updatedGuests = updatedGuests.slice(0, count);
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Guest Number</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={editingRegistration.guestCount}
+                  onChange={e => {
+                    const count = Math.max(0, parseInt(e.target.value, 10) || 0);
+                    let updatedGuests = [...(editingRegistration.guests || [])];
+                    if (count > updatedGuests.length) {
+                      for (let i = updatedGuests.length; i < count; i++) {
+                        updatedGuests.push({
+                          guestNumber: i + 1,
+                          dietaryPreference: 'Veg',
+                          hasBreakfast: false,
+                          hasLunch: false
+                        });
                       }
-                      setEditingRegistration({
-                        ...editingRegistration,
-                        guestCount: count,
-                        guests: updatedGuests,
-                        hasGuestBreakfast: count > 0 ? editingRegistration.hasGuestBreakfast : false,
-                        hasGuestLunch: count > 0 ? editingRegistration.hasGuestLunch : false
-                      });
-                    }}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Guest Match Meals</label>
-                  <div className="flex items-center gap-3 pt-2">
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
-                      <input
-                        type="checkbox"
-                        disabled={editingRegistration.guestCount === 0}
-                        checked={editingRegistration.hasGuestBreakfast}
-                        onChange={e => setEditingRegistration({ ...editingRegistration, hasGuestBreakfast: e.target.checked })}
-                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                      />
-                      <span>Breakfast</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-slate-800">
-                      <input
-                        type="checkbox"
-                        disabled={editingRegistration.guestCount === 0}
-                        checked={editingRegistration.hasGuestLunch}
-                        onChange={e => setEditingRegistration({ ...editingRegistration, hasGuestLunch: e.target.checked })}
-                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                      />
-                      <span>Lunch</span>
-                    </label>
-                  </div>
-                </div>
+                    } else if (count < updatedGuests.length) {
+                      updatedGuests = updatedGuests.slice(0, count);
+                    }
+                    setEditingRegistration({
+                      ...editingRegistration,
+                      guestCount: count,
+                      guests: updatedGuests,
+                      hasGuestBreakfast: updatedGuests.some(g => g.hasBreakfast),
+                      hasGuestLunch: updatedGuests.some(g => g.hasLunch)
+                    });
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono bg-white"
+                />
               </div>
 
-              {/* Independent Dietary Selection for Each Guest */}
+              {/* Independent Dietary & Meal Selection for Each Guest */}
               {editingRegistration.guestCount > 0 && Array.isArray(editingRegistration.guests) && editingRegistration.guests.length > 0 && (
-                <div className="pt-2 border-t border-slate-200/70 space-y-2">
+                <div className="pt-2 border-t border-slate-200/70 space-y-2.5">
                   <span className="text-[11px] font-bold text-slate-800 block">
-                    Independent Guest Dietary Preferences ({editingRegistration.guestCount} Guests):
+                    Individual Guest Dietary & Meal Preferences ({editingRegistration.guestCount} Guests):
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto p-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
                     {editingRegistration.guests.map((g, idx) => (
-                      <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200">
-                        <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                          Guest {idx + 1} — Dietary preference
-                        </label>
-                        <select
-                          value={g.dietaryPreference}
-                          onChange={e => {
-                            const newGuests = [...editingRegistration.guests];
-                            newGuests[idx] = { ...newGuests[idx], dietaryPreference: e.target.value };
-                            setEditingRegistration({ ...editingRegistration, guests: newGuests });
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs bg-white"
-                        >
-                          <option value="Veg">Veg (Vegetarian)</option>
-                          <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
-                        </select>
+                      <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                          <span className="font-bold text-slate-800 text-[11px]">
+                            Guest #{g.guestNumber || idx + 1}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">Independent</span>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-0.5 text-[10px]">
+                            Dietary Preference
+                          </label>
+                          <select
+                            value={g.dietaryPreference}
+                            onChange={e => {
+                              const newGuests = [...editingRegistration.guests];
+                              newGuests[idx] = { ...newGuests[idx], dietaryPreference: e.target.value };
+                              setEditingRegistration({ ...editingRegistration, guests: newGuests });
+                            }}
+                            className="w-full px-2 py-1 rounded border border-slate-300 text-xs bg-white"
+                          >
+                            <option value="Veg">Veg (Vegetarian)</option>
+                            <option value="Non-Veg">Non-Veg (Non-Vegetarian)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-600 mb-1 text-[10px]">
+                            Meal Requisition
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(g.hasBreakfast)}
+                                onChange={e => {
+                                  const newGuests = [...editingRegistration.guests];
+                                  newGuests[idx] = { ...newGuests[idx], hasBreakfast: e.target.checked };
+                                  setEditingRegistration({
+                                    ...editingRegistration,
+                                    guests: newGuests,
+                                    hasGuestBreakfast: newGuests.some(item => item.hasBreakfast)
+                                  });
+                                }}
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              />
+                              <span>Breakfast</span>
+                            </label>
+
+                            <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(g.hasLunch)}
+                                onChange={e => {
+                                  const newGuests = [...editingRegistration.guests];
+                                  newGuests[idx] = { ...newGuests[idx], hasLunch: e.target.checked };
+                                  setEditingRegistration({
+                                    ...editingRegistration,
+                                    guests: newGuests,
+                                    hasGuestLunch: newGuests.some(item => item.hasLunch)
+                                  });
+                                }}
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              />
+                              <span>Lunch</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

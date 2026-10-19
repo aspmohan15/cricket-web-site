@@ -881,8 +881,8 @@ export const supabaseDb = {
       guest_count: Number(reg.guestCount) || 0,
       guests: Array.isArray(reg.guests) ? reg.guests : [],
       guest_food_preference: reg.guestFoodPreference === 'Non-Veg' ? 'Non-Veg' : 'Veg',
-      has_guest_breakfast: Boolean(reg.hasGuestBreakfast),
-      has_guest_lunch: Boolean(reg.has_guest_lunch),
+      has_guest_breakfast: Boolean(reg.hasGuestBreakfast ?? reg.has_guest_breakfast),
+      has_guest_lunch: Boolean(reg.hasGuestLunch ?? reg.has_guest_lunch),
       payment_reference: reg.paymentReference || '',
       catering_status: reg.cateringStatus || 'requested',
       approval_status: reg.approvalStatus || 'pending',
@@ -908,8 +908,12 @@ export const supabaseDb = {
     if (updates.guestCount !== undefined) row.guest_count = updates.guestCount;
     if (updates.guests !== undefined) row.guests = updates.guests;
     if (updates.guestFoodPreference !== undefined) row.guest_food_preference = updates.guestFoodPreference;
-    if (updates.hasGuestBreakfast !== undefined) row.has_guest_breakfast = updates.hasGuestBreakfast;
-    if (updates.hasGuestLunch !== undefined) row.has_guest_lunch = updates.hasGuestLunch;
+    if (updates.hasGuestBreakfast !== undefined || updates.has_guest_breakfast !== undefined) {
+      row.has_guest_breakfast = updates.hasGuestBreakfast !== undefined ? updates.hasGuestBreakfast : updates.has_guest_breakfast;
+    }
+    if (updates.hasGuestLunch !== undefined || updates.has_guest_lunch !== undefined) {
+      row.has_guest_lunch = updates.hasGuestLunch !== undefined ? updates.hasGuestLunch : updates.has_guest_lunch;
+    }
     if (updates.paymentReference !== undefined) row.payment_reference = updates.paymentReference;
     if (updates.cateringStatus !== undefined) row.catering_status = updates.cateringStatus;
 

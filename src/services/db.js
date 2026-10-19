@@ -710,18 +710,22 @@ class TournamentDatabase {
 
     const guestCount = Math.max(0, parseInt(data.guestCount ?? data.guestNumber, 10) || 0);
 
-    // Validate and sanitize independent guest dietary preferences
+    // Validate and sanitize independent guest dietary preferences and meal selections
     let guests = [];
     if (guestCount > 0) {
       if (Array.isArray(data.guests) && data.guests.length > 0) {
         guests = data.guests.slice(0, guestCount).map((g, idx) => ({
           guestNumber: idx + 1,
-          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg'
+          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg',
+          hasBreakfast: Boolean(g?.hasBreakfast),
+          hasLunch: Boolean(g?.hasLunch)
         }));
         while (guests.length < guestCount) {
           guests.push({
             guestNumber: guests.length + 1,
-            dietaryPreference: 'Veg'
+            dietaryPreference: 'Veg',
+            hasBreakfast: false,
+            hasLunch: false
           });
         }
       } else {
@@ -729,7 +733,9 @@ class TournamentDatabase {
         for (let i = 1; i <= guestCount; i++) {
           guests.push({
             guestNumber: i,
-            dietaryPreference: fallbackDiet
+            dietaryPreference: fallbackDiet,
+            hasBreakfast: Boolean(data.hasGuestBreakfast),
+            hasLunch: Boolean(data.hasGuestLunch)
           });
         }
       }
@@ -752,10 +758,10 @@ class TournamentDatabase {
       hasBreakfast: Boolean(data.hasBreakfast),
       hasLunch: Boolean(data.hasLunch),
       guestCount,
-      guests, // Array of { guestNumber: number, dietaryPreference: 'Veg'|'Non-Veg' }
+      guests, // Array of { guestNumber: number, dietaryPreference: 'Veg'|'Non-Veg', hasBreakfast: boolean, hasLunch: boolean }
       guestFoodPreference: guests[0]?.dietaryPreference || 'Veg',
-      hasGuestBreakfast: guestCount > 0 ? Boolean(data.hasGuestBreakfast) : false,
-      hasGuestLunch: guestCount > 0 ? Boolean(data.hasGuestLunch) : false,
+      hasGuestBreakfast: guests.some(g => g.hasBreakfast),
+      hasGuestLunch: guests.some(g => g.hasLunch),
       paymentReference: data.paymentReference || '',
       cateringStatus: 'requested',
       approvalStatus: 'pending',
@@ -790,21 +796,29 @@ class TournamentDatabase {
       } else if (Array.isArray(updated.guests)) {
         updated.guests = updated.guests.slice(0, gCount).map((g, i) => ({
           guestNumber: i + 1,
-          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg'
+          dietaryPreference: (g?.dietaryPreference === 'Non-Veg' || g?.dietaryPreference === 'Non-Vegetarian') ? 'Non-Veg' : 'Veg',
+          hasBreakfast: Boolean(g?.hasBreakfast),
+          hasLunch: Boolean(g?.hasLunch)
         }));
         while (updated.guests.length < gCount) {
           updated.guests.push({
             guestNumber: updated.guests.length + 1,
-            dietaryPreference: 'Veg'
+            dietaryPreference: 'Veg',
+            hasBreakfast: false,
+            hasLunch: false
           });
         }
       } else {
         updated.guests = Array.from({ length: gCount }, (_, i) => ({
           guestNumber: i + 1,
-          dietaryPreference: updated.guestFoodPreference || 'Veg'
+          dietaryPreference: updated.guestFoodPreference || 'Veg',
+          hasBreakfast: Boolean(updated.hasGuestBreakfast),
+          hasLunch: Boolean(updated.hasGuestLunch)
         }));
       }
       updated.guestFoodPreference = updated.guests[0]?.dietaryPreference || 'Veg';
+      updated.hasGuestBreakfast = updated.guests.some(g => g.hasBreakfast);
+      updated.hasGuestLunch = updated.guests.some(g => g.hasLunch);
     }
 
     this.schema.registrations[idx] = updated;

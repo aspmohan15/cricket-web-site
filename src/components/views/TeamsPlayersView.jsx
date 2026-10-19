@@ -42,14 +42,12 @@ export const TeamsPlayersView = ({
   const [createPlayerModalOpen, setCreatePlayerModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
 
-  // Team Form
+  // Team Form (Home City and Owner fields removed as requested)
   const [teamForm, setTeamForm] = useState({
     name: '',
     shortCode: '',
-    city: tournament?.city || 'Mumbai',
     primaryColor: '#0284c7',
     secondaryColor: '#0f172a',
-    ownerName: '',
     budgetTotal: tournament?.totalBudgetPointsPerTeam || 10000000
   });
 
@@ -84,10 +82,8 @@ export const TeamsPlayersView = ({
       tournamentId: tournament?.id || '',
       name: teamForm.name,
       shortCode: (teamForm.shortCode || 'TEAM').toUpperCase(),
-      city: teamForm.city || tournament?.city || 'Mumbai',
       primaryColor: teamForm.primaryColor || '#0284c7',
       secondaryColor: teamForm.secondaryColor || '#0f172a',
-      ownerName: teamForm.ownerName || 'Franchise Owner',
       budgetTotal: Number(teamForm.budgetTotal) || tournament?.totalBudgetPointsPerTeam || 10000000,
       budgetSpent: 0,
       budgetRemaining: Number(teamForm.budgetTotal) || tournament?.totalBudgetPointsPerTeam || 10000000,
@@ -810,28 +806,17 @@ export const TeamsPlayersView = ({
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Home City</label>
+              <label className="block font-semibold text-slate-700 mb-1">Total Auction Purse (Points)</label>
               <input
-                type="text"
+                type="number"
                 required
-                placeholder="Mumbai"
-                value={teamForm.city}
-                onChange={e => setTeamForm({ ...teamForm, city: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                step={500000}
+                value={teamForm.budgetTotal}
+                onChange={e => setTeamForm({ ...teamForm, budgetTotal: parseInt(e.target.value, 10) || 10000000 })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
               />
             </div>
             <div className="col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Franchise Owner / Group</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Vanguard Sports Ventures"
-                value={teamForm.ownerName}
-                onChange={e => setTeamForm({ ...teamForm, ownerName: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
               <label className="block font-semibold text-slate-700 mb-1">Primary Color</label>
               <div className="flex items-center gap-2">
                 <input
@@ -847,17 +832,6 @@ export const TeamsPlayersView = ({
                   className="w-full px-2 py-1.5 rounded border border-slate-300 font-mono text-[11px]"
                 />
               </div>
-            </div>
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Total Auction Purse (Points)</label>
-              <input
-                type="number"
-                required
-                step={500000}
-                value={teamForm.budgetTotal}
-                onChange={e => setTeamForm({ ...teamForm, budgetTotal: parseInt(e.target.value, 10) || 10000000 })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">

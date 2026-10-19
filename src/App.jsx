@@ -800,6 +800,7 @@ export default function App() {
                   users={db.getUsers()}
                   currentUser={currentUser}
                   onSwitchRole={handleSwitchRole}
+                  onShowToast={showToast}
                 />
               )}
 

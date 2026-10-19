@@ -802,3 +802,52 @@ CREATE POLICY "Organizers can manage audit logs"
   ON public.audit_logs FOR ALL
   USING (public.is_organizer())
   WITH CHECK (public.is_organizer());
+
+-- ------------------------------------------------------------------------------
+-- 21. ADMINISTRATORS & SECURITY CREDENTIALS
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.administrators (
+  id TEXT PRIMARY KEY DEFAULT ('adm-' || substr(md5(random()::text), 1, 10)),
+  name TEXT NOT NULL,
+  mobile TEXT NOT NULL UNIQUE,
+  email TEXT,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  created_by TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_otp_codes (
+  mobile TEXT PRIMARY KEY,
+  otp_code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.administrators ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_otp_codes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Organizers can view administrators" ON public.administrators;
+CREATE POLICY "Organizers can view administrators"
+  ON public.administrators FOR SELECT
+  USING (public.is_organizer());
+
+DROP POLICY IF EXISTS "Approved registrations or open registration can insert player" ON public.players;
+CREATE POLICY "Approved registrations or open registration can insert player"
+  ON public.players FOR INSERT
+  WITH CHECK (
+    public.is_organizer() OR
+    EXISTS (
+      SELECT 1 FROM public.tournaments
+      WHERE id = tournament_id AND registration_open = true
+    ) OR
+    EXISTS (
+      SELECT 1 FROM public.registrations
+      WHERE tournament_id = players.tournament_id
+        AND email = players.email
+        AND approval_status = 'approved'
+    )
+  );
